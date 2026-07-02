@@ -1,0 +1,13 @@
+[Unit]
+Description=Michael voice listener
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/home/arthur/.venvs/jarvis/bin/python /home/arthur/michael_voice.py
+Restart=always
+RestartSec=2
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target

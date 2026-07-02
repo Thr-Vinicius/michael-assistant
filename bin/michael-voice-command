@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source "$HOME/.local/share/michael/scripts/config.sh"
+
+TEXT="${*:-}"
+TEXT="$(printf '%s' "$TEXT" | tr '[:upper:]' '[:lower:]')"
+
+if [[ -z "$TEXT" ]]; then
+    log_michael "voz: comando vazio ignorado"
+    exit 0
+fi
+
+TRUSTED="${MICHAEL_FROM_VOICE:-0}"
+HAS_WAKE=0
+
+case "$TEXT" in
+    *"michael"*|*"maikel"*|*"maicon"*|*"mikel"*|*"miguel"*|*"michel"*|*"miquel"*|*"maiquel"*|*"maicol"*|*"maico"*)
+        HAS_WAKE=1
+        ;;
+esac
+
+if [[ "$TRUSTED" != "1" && "$HAS_WAKE" != "1" ]]; then
+    log_michael "router bloqueado: sem wake e sem origem confiável: $TEXT"
+    exit 0
+fi
+
+case "$TEXT" in
+    *" como "*|como\ *|*" por que "*|por\ que\ *|*" porque "*|porque\ *|*" o que "*|o\ que\ *|*" qual "*|qual\ *|*" quais "*|quais\ *|*" quando "*|quando\ *|*" onde "*|onde\ *|*" quem "*|quem\ *)
+        log_michael "router: pergunta ignorada para evitar ação acidental: $TEXT"
+        exit 0
+        ;;
+esac
+
+case "$TEXT" in
+    *"pausa"*|*"pausar"*)
+        log_michael "voz: pausar"
+        "$HOME/.local/bin/michael-pausa"
+        ;;
+
+    *"voltar"*|*"ativar"*)
+        log_michael "voz: voltar"
+        "$HOME/.local/bin/michael-voltar"
+        ;;
+
+    *"ajuda"*|*"comandos"*|*"o que voce faz"*|*"o que você faz"*)
+        log_michael "voz: ajuda"
+        "$HOME/.local/bin/michael-ajuda"
+        ;;
+
+    *"status"*|*"estado"*|*"estados"*|*"estatus"*)
+        log_michael "voz: status"
+        "$HOME/.local/bin/michael-status"
+        ;;
+
+    *"check"*|*"verificar"*|*"diagnostico"*|*"diagnóstico"*|*"teste"*)
+        log_michael "voz: check"
+        "$HOME/.local/bin/michael-check"
+        ;;
+
+    *"logs"*|*"ultimos"*|*"últimos"*)
+        log_michael "voz: últimos logs"
+        "$HOME/.local/bin/michael-ultimos"
+        ;;
+
+    *"fone"*|*"fones"*|*"bluetooth"*)
+        log_michael "voz: fone"
+        "$HOME/.local/bin/michael-fone"
+        ;;
+
+    *"resolver"*|*"resync"*|*"ressincronizar"*|*"ressincroniza"*|*"resincronizar"*|*"resincroniza"*)
+        log_michael "voz: resolver fones"
+        "$HOME/.local/bin/michael-resolver"
+        ;;
+
+    *"volume"*)
+        log_michael "voz: volume"
+        "$HOME/.local/bin/michael-volume" "$TEXT"
+        ;;
+
+    *"video"*|*"vídeo"*|*"videos"*|*"vídeos"*|*"youtube normal"*)
+        log_michael "voz: video"
+        "$HOME/.local/bin/michael-video"
+        ;;
+
+    *"tempo"*|*"clima"*|*"previsao"*|*"previsão"*)
+        log_michael "voz: tempo"
+        "$HOME/.local/bin/michael-tempo"
+        ;;
+
+    *"agenda"*|*"calendario"*|*"calendário"*)
+        log_michael "voz: agenda"
+        "$HOME/.local/bin/michael-agenda" "$TEXT"
+        ;;
+
+    *"desligar teste"*|*"teste desligar"*|*"testar desligar"*)
+        log_michael "voz: desligar teste"
+        "$HOME/.local/bin/michael-desligar-teste"
+        ;;
+
+    *"desligar"*|*"encerrar pc"*|*"encerrar computador"*|*"desligar pc"*|*"desligar computador"*)
+        log_michael "voz: desligar"
+        nohup "$HOME/.local/bin/michael-desligar" >/dev/null 2>&1 &
+        ;;
+
+    *"mudar"*|*"muda"*|*"trocar"*|*"troca"*|*"reorganizar"*|*"organizar"*|*"organiza"*)
+        log_michael "voz: mudar"
+        "$HOME/.local/bin/michael-mudar"
+        ;;
+
+    *"começar"*|*"comecar"*|*"começa"*|*"comeca"*|*"comece"*|*"iniciar"*|*"inicia"*|*"inicie"*|*"setup"*|*"abrir setup"*)
+        log_michael "voz: começar/setup"
+        "$HOME/.local/bin/michael-setup-request"
+        ;;
+
+    *"musica"*|*"música"*|*"youtube"*|*"music"*)
+        log_michael "voz: música"
+        "$HOME/.local/bin/michael-musica"
+        ;;
+
+    *)
+        log_michael "voz: comando não reconhecido: $TEXT"
+        ;;
+esac

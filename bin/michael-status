@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source "$HOME/.local/share/michael/scripts/config.sh"
+
+svc_status() {
+    systemctl --user is-active "$1" 2>/dev/null || true
+}
+
+svc_enabled() {
+    systemctl --user is-enabled "$1" 2>/dev/null || true
+}
+
+bool_pt() {
+    case "$1" in
+        sim) echo "sim" ;;
+        não|nao) echo "não" ;;
+        *) echo "$1" ;;
+    esac
+}
+
+VOICE_STATUS="$(svc_status michael-voice.service)"
+VOICE_ENABLED="$(svc_enabled michael-voice.service)"
+
+OLD_VOICE_STATUS="$(svc_status jarvis-wakeword.service)"
+OLD_VOICE_ENABLED="$(svc_enabled jarvis-wakeword.service)"
+
+CLAP_STATUS="$(svc_status michael-clap.service)"
+CLAP_ENABLED="$(svc_enabled michael-clap.service)"
+
+[[ -z "$VOICE_STATUS" ]] && VOICE_STATUS="not-found"
+[[ -z "$VOICE_ENABLED" ]] && VOICE_ENABLED="not-found"
+[[ -z "$OLD_VOICE_STATUS" ]] && OLD_VOICE_STATUS="not-found"
+[[ -z "$OLD_VOICE_ENABLED" ]] && OLD_VOICE_ENABLED="not-found"
+[[ -z "$CLAP_STATUS" ]] && CLAP_STATUS="not-found"
+[[ -z "$CLAP_ENABLED" ]] && CLAP_ENABLED="not-found"
+
+if is_paused; then
+    PAUSED_STATUS="sim"
+else
+    PAUSED_STATUS="não"
+fi
+
+if has_pending; then
+    PENDING_STATUS="sim"
+else
+    PENDING_STATUS="não"
+fi
+
+if apps_open; then
+    APPS_STATUS="sim"
+    SETUP_LABEL="aberto"
+else
+    APPS_STATUS="não"
+    SETUP_LABEL="fechado"
+fi
+
+if command -v ydotool >/dev/null 2>&1; then
+    YDO_STATUS="instalado"
+else
+    YDO_STATUS="não encontrado"
+fi
+
+VOICE_PROCS="$(pgrep -af 'michael_voice.py|jarvis_wakeword.py|clap_setup.py' || true)"
+VOICE_PROC_COUNT="$(printf '%s\n' "$VOICE_PROCS" | sed '/^$/d' | wc -l)"
+
+FULL_BODY="$(cat <<STATUS
+Michael 1.2 Status
+===================
+
+Voz principal:      $VOICE_STATUS / $VOICE_ENABLED
+Voz antiga/Jarvis:  $OLD_VOICE_STATUS / $OLD_VOICE_ENABLED
+Palmas:             $CLAP_STATUS / $CLAP_ENABLED
+
+Pausado:            $PAUSED_STATUS
+Setup pendente:     $PENDING_STATUS
+Apps/setup aberto:  $APPS_STATUS
+ydotool:            $YDO_STATUS
+
+Processos de áudio: $VOICE_PROC_COUNT
+
+$VOICE_PROCS
+STATUS
+)"
+
+NOTIFY_BODY="$(cat <<STATUS
+Voz: $VOICE_STATUS / $VOICE_ENABLED
+Setup: $SETUP_LABEL | Pausado: $PAUSED_STATUS
+Jarvis: $OLD_VOICE_STATUS | Palmas: $CLAP_STATUS
+Processos de áudio: $VOICE_PROC_COUNT
+STATUS
+)"
+
+echo "$FULL_BODY"
+
+notify_basic "Michael Status" "$NOTIFY_BODY"
+
+log_michael "status: voz=$VOICE_STATUS/$VOICE_ENABLED voz_antiga=$OLD_VOICE_STATUS/$OLD_VOICE_ENABLED palmas=$CLAP_STATUS/$CLAP_ENABLED pausado=$PAUSED_STATUS pendente=$PENDING_STATUS apps=$APPS_STATUS processos_audio=$VOICE_PROC_COUNT"

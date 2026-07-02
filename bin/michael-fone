@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source "$HOME/.local/share/michael/scripts/config.sh"
+
+LOCK_FILE="$MICHAEL_RUNTIME_DIR/fone.lock"
+FONE_LOG="$LOG_DIR/fones.log"
+
+if command -v flock >/dev/null 2>&1; then
+    exec 9>"$LOCK_FILE"
+    if ! flock -n 9; then
+        notify_cooldown "fone_running" 10 "Michael" "Já estou conectando os fones."
+        log_michael "fone cancelado: outro processo já está rodando"
+        exit 0
+    fi
+fi
+
+SCRIPT=""
+
+for candidate in \
+    "$HOME/split-fones.sh" \
+    "$HOME/.local/bin/split-fones.sh" \
+    "$HOME/.config/hypr/scripts/split-fones.sh" \
+    "$HOME/scripts/split-fones.sh"
+do
+    if [[ -x "$candidate" ]]; then
+        SCRIPT="$candidate"
+        break
+    fi
+done
+
+if [[ -z "$SCRIPT" ]]; then
+    notify_basic "Michael" "Não encontrei o script split-fones.sh."
+    log_michael "fone falhou: split-fones.sh não encontrado"
+    exit 1
+fi
+
+notify_basic "Michael" "Conectando fones..."
+log_michael "fone iniciado: $SCRIPT"
+
+if "$SCRIPT" >> "$FONE_LOG" 2>&1; then
+    notify_basic "Michael" "Fones conectados."
+    log_michael "fone finalizado"
+else
+    notify_basic "Michael" "Não consegui conectar os fones."
+    log_michael "fone falhou; veja $FONE_LOG"
+    exit 1
+fi
