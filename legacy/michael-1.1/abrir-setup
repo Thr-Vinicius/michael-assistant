@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+# Se qualquer app do setup já estiver aberto, ignora tudo
+if hyprctl clients -j | jq -e '
+    .[] | select(
+        (.class | test("zen|zen-browser|chrome-cinhimbnkkaeohfgghhklpknlkffjgod-Default|chrome-hnpfjngllnobngcgfapefoaidbinmjnm-Default"; "i"))
+        or
+        (.title | test("Zen|YouTube Music|WhatsApp"; "i"))
+    )
+' >/dev/null; then
+    notify-send "Michael" "Setup já está aberto. Ignorando."
+    exit 0
+fi
+
+notify-send "Michael" "Abrindo setup"
+
+# Abre Zen primeiro
+hyprctl dispatch exec "[workspace 1 silent] zen-browser"
+
+sleep 2
+
+# Depois abre YouTube Music e WhatsApp
+/home/arthur/.config/hypr/scripts/abrir-wa-yt.sh

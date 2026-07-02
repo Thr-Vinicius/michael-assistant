@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+PAUSE_FILE="/home/arthur/.jarvis_paused"
+PENDING_FILE="/home/arthur/.michael_setup_pending"
+WELCOME_FLAG="/home/arthur/.michael_welcome_played"
+WELCOME_AUDIO="/home/arthur/audios-michael/boas_vindas_senhor_pronto_para_mais_um_dia.mp3"
+
+if [ -f "$PAUSE_FILE" ]; then
+    notify-send "Michael" "Estou pausado 💤"
+    exit 0
+fi
+
+# Se algum app do setup já estiver aberto, ignora tudo
+if hyprctl clients -j | jq -e '
+    .[] | select(
+        (.class | test("zen|zen-browser|chrome-cinhimbnkkaeohfgghhklpknlkffjgod-Default|chrome-hnpfjngllnobngcgfapefoaidbinmjnm-Default"; "i"))
+        or
+        (.title | test("Zen|YouTube Music|WhatsApp"; "i"))
+    )
+' >/dev/null; then
+    notify-send "Michael" "Setup já está aberto. Ignorando."
+    exit 0
+fi
+
+touch "$PENDING_FILE"
+
+if [ ! -f "$WELCOME_FLAG" ]; then
+    touch "$WELCOME_FLAG"
+
+    notify-send "Michael" "Aguardando confirmação: diga correto"
+
+    if command -v pw-play >/dev/null 2>&1; then
+        pw-play "$WELCOME_AUDIO" &
+    elif command -v mpv >/dev/null 2>&1; then
+        mpv --no-video --really-quiet "$WELCOME_AUDIO" &
+    else
+        notify-send "Michael" "Áudio não tocado: instale mpv ou use pw-play"
+    fi
+else
+    notify-send "Michael" "Diga correto para abrir o setup"
+fi

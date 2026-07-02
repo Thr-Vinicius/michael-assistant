@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+touch /home/arthur/.jarvis_paused
+notify-send "Michael" "Comandos pausados 💤"
