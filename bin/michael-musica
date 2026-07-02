@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source "$HOME/.local/share/michael/scripts/config.sh"
+
+MICHAEL_MUSIC_LOCK="$MICHAEL_RUNTIME_DIR/musica.lock"
+
+if command -v flock >/dev/null 2>&1; then
+    exec 9>"$MICHAEL_MUSIC_LOCK"
+    if ! flock -n 9; then
+        notify_cooldown "music_running" 15 "Michael" "Música já está sendo aberta."
+        log_michael "música cancelada: outro processo já está rodando"
+        exit 0
+    fi
+fi
+
+YT_CLASS="chrome-cinhimbnkkaeohfgghhklpknlkffjgod-Default"
+YT_APP_ID="cinhimbnkkaeohfgghhklpknlkffjgod"
+
+if is_paused; then
+    notify_cooldown "paused" 30 "Michael" "Estou pausado 💤"
+    log_michael "música ignorada: pausado"
+    exit 0
+fi
+
+# Se Zen, WhatsApp ou YouTube Music já estiverem abertos, considera setup aberto/ocupado.
+if apps_open; then
+    notify_cooldown "apps_open" 20 "Michael" "Setup já parece estar aberto. Não vou mexer na música."
+    log_michael "música ignorada: setup/apps já abertos"
+    exit 0
+fi
+
+if ! command -v chromium >/dev/null 2>&1; then
+    notify_basic "Michael" "Chromium não encontrado."
+    log_michael "música falhou: chromium não encontrado"
+    exit 1
+fi
+
+notify_basic "Michael" "Abrindo YouTube Music."
+log_michael "abrindo YouTube Music por comando de voz"
+
+hyprctl dispatch exec "[workspace 5 silent] chromium --profile-directory=Default --app-id=$YT_APP_ID" >/dev/null 2>&1 || true
+
+sleep 6
+
+hyprctl dispatch workspace 5 >/dev/null 2>&1 || true
+sleep 0.5
+
+hyprctl dispatch focuswindow "class:^($YT_CLASS)$" >/dev/null 2>&1 || true
+
+sleep 3
+
+if command -v ydotool >/dev/null 2>&1; then
+    ydotool key 57:1 57:0 >/dev/null 2>&1 || true
+    notify_basic "Michael" "Música iniciada."
+    log_michael "música iniciada com ydotool"
+else
+    notify_basic "Michael" "YouTube Music aberto, mas ydotool não foi encontrado."
+    log_michael "música aberta, mas ydotool não encontrado"
+fi

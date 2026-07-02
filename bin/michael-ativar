@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source "$HOME/.local/share/michael/scripts/config.sh"
+
+ACTIVATE_FILE="$MICHAEL_RUNTIME_DIR/activate_listen"
+
+touch "$ACTIVATE_FILE"
+log_michael "atalho Ctrl+Ç ativou escuta do Michael"

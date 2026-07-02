@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source "$HOME/.local/share/michael/scripts/config.sh"
+
+FULL_BODY="$(cat <<'HELP'
+Michael 1.2 — Comandos de voz
+
+Ativação:
+- Michael
+- Michael, começar
+
+Setup:
+- Michael, começar
+- Michael, setup
+
+Sistema:
+- Michael, status
+- Michael, check
+- Michael, ajuda
+- Michael, logs
+
+Controle:
+- Michael, pausa
+- Michael, voltar
+- Michael, volume 1
+- Michael, volume 5
+- Michael, volume 10
+- Michael, volume mudo
+
+Apps:
+- Michael, música
+- Michael, vídeo
+- Michael, mudar
+
+Energia:
+- Michael, desligar
+
+Informações:
+- Michael, tempo hoje
+- Michael, agenda
+- Michael, agenda amanhã
+- Michael, agenda semana
+- Michael, agenda editar
+
+Funcionamento:
+- Volume vai de 1 a 10.
+- Volume 1 = 10%.
+- Volume 10 = 100%.
+- Dizer apenas "Michael" toca o som, mostra "Estou ouvindo", baixa o volume para 15% e abre escuta por 5 segundos.
+- Se nenhum comando for dito, o volume volta ao anterior.
+HELP
+)"
+
+NOTIFY_BODY="$(cat <<'HELP'
+Comandos:
+começar, música, vídeo, mudar
+tempo hoje, agenda, desligar
+status, check, ajuda, logs
+volume 1-10, pausa, voltar
+HELP
+)"
+
+echo "$FULL_BODY"
+notify_basic "Michael Ajuda" "$NOTIFY_BODY"
+log_michael "ajuda exibida"
