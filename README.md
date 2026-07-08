@@ -2,29 +2,33 @@
 
 Michael é um assistente local para Arch Linux com Hyprland, focado em produtividade, automação simples e redução de atrito.
 
-## Estado atual
+## Versão atual
 
-Versão atual preservada: Michael 1.2.
+Michael 2.0 Minimal Stable.
 
 ## Objetivo
 
-Evoluir para o Michael 2.0 com uma camada segura de interpretação por IA/Hermes, mantendo comandos reais atrás de um roteador validado.
+Manter um assistente local pequeno, seguro, útil e sem LLM por enquanto.
 
 ## Princípios
 
 - Estabilidade antes de inteligência.
-- Nada de terminal livre para LLM.
-- Comandos por voz passam por whitelist.
-- Scripts silenciosos em stdout/stderr.
-- Notificações e logs em vez de prints no terminal.
-- Backup antes de alterações importantes.
+- Sem LLM/Hermes nesta versão.
+- Nada de terminal livre para IA.
+- Comandos passam por router seguro.
+- Scripts chamados por voz devem ser silenciosos.
+- Notificações e logs em vez de prints quando chamado por voz.
 - Sem processos duplicados.
+- Baixo consumo e baixa manutenção.
 
 ## Componentes
 
-- `voice/michael_voice.py`: captura e interpretação inicial de voz.
-- `bin/`: comandos locais do Michael.
-- `systemd/user/`: serviços systemd de usuário.
-- `hypr/scripts/`: scripts integrados ao Hyprland.
-- `config/`: configurações de exemplo.
-- `docs/`: documentação do estado atual e planos.
+- voice/michael_voice.py: escuta de voz.
+- bin/michael-voice-command: ponte entre voz e router.
+- bin/michael-router: roteador seguro.
+- bin/michael: modo terminal.
+- bin/michael-check: diagnóstico.
+- bin/michael-ouviu: histórico do que foi reconhecido.
+- hypr/scripts/: integração com Hyprland.
+- systemd/user/: serviço systemd de usuário.
+- docs/: documentação.

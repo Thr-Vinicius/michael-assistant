@@ -1,55 +1,14 @@
 #!/usr/bin/env bash
-set -euo pipefail
 
-source "$HOME/.local/share/michael/scripts/config.sh"
+set -u
 
-INTRO_AUDIO="${MICHAEL_START_AUDIO:-$HOME/audios-michael/inic.mp3}"
-LOCK_FILE="$MICHAEL_RUNTIME_DIR/welcome.lock"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/michael"
+LOG_FILE="$STATE_DIR/welcome.log"
 
-play_blocking() {
-    local file="$1"
+mkdir -p "$STATE_DIR"
 
-    [[ -f "$file" ]] || {
-        log_michael "welcome: áudio não encontrado: $file"
-        return 1
-    }
+{
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] michael-welcome desativado: sem áudio de inicialização."
+} >> "$LOG_FILE" 2>&1
 
-    if command -v mpv >/dev/null 2>&1; then
-        mpv --no-terminal --really-quiet "$file" >/dev/null 2>&1 || true
-        return 0
-    fi
-
-    if command -v ffplay >/dev/null 2>&1; then
-        ffplay -nodisp -autoexit -loglevel quiet "$file" >/dev/null 2>&1 || true
-        return 0
-    fi
-
-    if command -v paplay >/dev/null 2>&1; then
-        paplay "$file" >/dev/null 2>&1 || true
-        return 0
-    fi
-
-    log_michael "welcome: nenhum player disponível"
-    return 1
-}
-
-if command -v flock >/dev/null 2>&1; then
-    exec 9>"$LOCK_FILE"
-    if ! flock -n 9; then
-        log_michael "welcome ignorado: outro welcome já está rodando"
-        exit 0
-    fi
-fi
-
-sleep 5
-
-log_michael "welcome iniciado pelo boot/login"
-
-set_system_volume "60%"
-sleep 0.2
-
-play_blocking "$INTRO_AUDIO"
-play_blocking "$WELCOME_AUDIO"
-
-set_system_volume "30%"
-log_michael "welcome finalizado; volume ajustado para 30%"
+exit 0

@@ -1,34 +1,60 @@
 #!/usr/bin/env bash
-set -euo pipefail
 
-source "$HOME/.local/share/michael/scripts/config.sh"
+set -u
 
 FAILS=0
-WARNINGS=0
+WARNS=0
 
 ok() {
-    printf '✅ %s\n' "$1"
+    printf '✅ %s\n' "$*"
 }
 
 warn() {
-    WARNINGS=$((WARNINGS + 1))
-    printf '⚠️  %s\n' "$1"
+    WARNS=$((WARNS + 1))
+    printf '⚠️  %s\n' "$*"
 }
 
 fail() {
     FAILS=$((FAILS + 1))
-    printf '❌ %s\n' "$1"
+    printf '❌ %s\n' "$*"
 }
 
-svc_active() {
-    systemctl --user is-active "$1" 2>/dev/null || true
+section() {
+    printf '\n%s\n' "$1"
+    printf '%s\n' "$(printf '%*s' "${#1}" '' | tr ' ' '-')"
 }
 
-svc_enabled() {
-    systemctl --user is-enabled "$1" 2>/dev/null || true
+unit_active() {
+    systemctl --user is-active "$1" 2>/dev/null | head -n 1 || true
 }
 
-check_cmd() {
+unit_enabled() {
+    systemctl --user is-enabled "$1" 2>/dev/null | head -n 1 || true
+}
+
+check_executable() {
+    local path="$1"
+
+    if [ -x "$path" ]; then
+        ok "Executável: $path"
+    elif [ -e "$path" ]; then
+        fail "Existe, mas não está executável: $path"
+    else
+        fail "Não encontrado: $path"
+    fi
+}
+
+check_file() {
+    local path="$1"
+
+    if [ -f "$path" ]; then
+        ok "Arquivo encontrado: $path"
+    else
+        fail "Arquivo não encontrado: $path"
+    fi
+}
+
+check_command() {
     local cmd="$1"
 
     if command -v "$cmd" >/dev/null 2>&1; then
@@ -38,190 +64,192 @@ check_cmd() {
     fi
 }
 
-check_any_cmd() {
-    local label="$1"
-    shift
+echo "Michael 2.0 Minimal Stable - Check"
+echo "=================================="
+echo "Data: $(date)"
 
-    local found=""
+section "Serviços"
 
-    for cmd in "$@"; do
-        if command -v "$cmd" >/dev/null 2>&1; then
-            found="$cmd"
-            break
-        fi
-    done
+voice_active="$(unit_active michael-voice.service)"
+voice_enabled="$(unit_enabled michael-voice.service)"
 
-    if [[ -n "$found" ]]; then
-        ok "$label disponível: $found"
-    else
-        fail "$label indisponível: nenhum encontrado ($*)"
-    fi
-}
-
-check_exec() {
-    local file="$1"
-
-    if [[ -x "$file" ]]; then
-        ok "Script executável: $file"
-    elif [[ -f "$file" ]]; then
-        fail "Script existe, mas não está executável: $file"
-    else
-        fail "Script ausente: $file"
-    fi
-}
-
-check_file() {
-    local file="$1"
-    local label="$2"
-
-    if [[ -f "$file" ]]; then
-        ok "$label encontrado: $file"
-    else
-        warn "$label não encontrado: $file"
-    fi
-}
-
-echo
-echo "Michael Check"
-echo "============="
-echo
-
-VOICE_ACTIVE="$(svc_active michael-voice.service)"
-VOICE_ENABLED="$(svc_enabled michael-voice.service)"
-
-OLD_ACTIVE="$(svc_active jarvis-wakeword.service)"
-OLD_ENABLED="$(svc_enabled jarvis-wakeword.service)"
-
-CLAP_ACTIVE="$(svc_active michael-clap.service)"
-CLAP_ENABLED="$(svc_enabled michael-clap.service)"
-
-if [[ "$VOICE_ACTIVE" == "active" ]]; then
+if [ "$voice_active" = "active" ]; then
     ok "Voz principal ativa"
 else
-    fail "Voz principal não está ativa: $VOICE_ACTIVE"
+    fail "Voz principal não está ativa: ${voice_active:-desconhecido}"
 fi
 
-if [[ "$VOICE_ENABLED" == "enabled" ]]; then
+if [ "$voice_enabled" = "enabled" ]; then
     ok "Voz principal habilitada no boot"
 else
-    warn "Voz principal não está enabled: $VOICE_ENABLED"
+    warn "Voz principal não está habilitada no boot: ${voice_enabled:-desconhecido}"
 fi
 
-if [[ "$OLD_ACTIVE" == "inactive" || "$OLD_ACTIVE" == "failed" || -z "$OLD_ACTIVE" ]]; then
+jarvis_active="$(unit_active jarvis-wakeword.service)"
+clap_active="$(unit_active michael-clap.service)"
+
+if [ "$jarvis_active" = "active" ]; then
+    fail "Voz antiga/Jarvis ainda está rodando"
+else
     ok "Voz antiga/Jarvis não está rodando"
-else
-    fail "Voz antiga/Jarvis ainda está rodando: $OLD_ACTIVE"
 fi
 
-if [[ "$CLAP_ACTIVE" == "inactive" || "$CLAP_ACTIVE" == "failed" || -z "$CLAP_ACTIVE" ]]; then
+if [ "$clap_active" = "active" ]; then
+    fail "Palmas ainda estão rodando"
+else
     ok "Palmas não estão rodando"
-else
-    fail "Serviço de palmas ainda está rodando: $CLAP_ACTIVE"
 fi
 
-VOICE_PROCS="$(pgrep -af 'michael_voice.py|jarvis_wakeword.py|clap_setup.py' || true)"
-VOICE_PROC_COUNT="$(printf '%s\n' "$VOICE_PROCS" | sed '/^$/d' | wc -l)"
+section "Processos"
 
-if [[ "$VOICE_PROC_COUNT" -eq 1 ]] && printf '%s\n' "$VOICE_PROCS" | grep -q "michael_voice.py"; then
-    ok "Apenas um processo de voz rodando"
+voice_processes="$(pgrep -af 'michael_voice.py' 2>/dev/null || true)"
+voice_count="$(printf '%s\n' "$voice_processes" | sed '/^$/d' | wc -l)"
+
+if [ "$voice_count" -eq 1 ]; then
+    ok "Apenas um processo michael_voice.py rodando"
 else
-    fail "Quantidade/processo de voz inesperado: $VOICE_PROC_COUNT"
-    printf '%s\n' "$VOICE_PROCS"
+    fail "Quantidade inesperada de processos michael_voice.py: $voice_count"
 fi
 
-echo
-echo "Scripts"
-echo "-------"
-
-check_exec "$HOME/.local/bin/michael-setup-request"
-check_exec "$HOME/.local/bin/abrir-setup"
-check_exec "$HOME/.local/bin/michael-voice-command"
-check_exec "$HOME/.local/bin/michael-status"
-check_exec "$HOME/.local/bin/michael-welcome"
-check_exec "$HOME/.local/bin/michael-musica"
-check_exec "$HOME/.local/bin/michael-video"
-check_exec "$HOME/.local/bin/michael-ajuda"
-check_exec "$HOME/.local/bin/michael-volume"
-check_exec "$HOME/.local/bin/michael-mudar"
-check_exec "$HOME/.local/bin/michael-tempo"
-check_exec "$HOME/.local/bin/michael-agenda"
-check_exec "$HOME/.local/bin/michael-desligar"
-check_exec "$HOME/.local/bin/michael-desligar-teste"
-
-echo
-echo "Dependências"
-echo "------------"
-
-check_cmd hyprctl
-check_cmd jq
-check_cmd ydotool
-check_any_cmd "Player de áudio" mpv ffplay paplay
-check_any_cmd "Controle de volume" wpctl pactl amixer
-
-echo
-echo "Permissões"
-echo "----------"
-
-if sudo -n /usr/bin/pacman --version >/dev/null 2>&1; then
-    ok "NOPASSWD para pacman funcionando"
-else
-    fail "NOPASSWD para pacman não está funcionando"
+if [ -n "$voice_processes" ]; then
+    printf '%s\n' "$voice_processes"
 fi
 
-echo
-echo "Áudios"
-echo "------"
+section "Scripts ativos"
 
-check_file "$HOME/audios-michael/inic.mp3" "Áudio inicial"
-check_file "$HOME/audios-michael/conf_1_som.mp3" "Som de ativação"
-check_file "$HOME/audios-michael/boas_vindas_senhor_pronto_para_mais_um_dia.mp3" "Boas-vindas"
-check_file "$HOME/audios-michael/deslig.mp3" "Áudio de desligamento futuro"
+check_executable "$HOME/.local/bin/michael"
+check_executable "$HOME/.local/bin/michael-router"
+check_executable "$HOME/.local/bin/michael-voice-command"
+check_executable "$HOME/.local/bin/michael-ajuda"
+check_executable "$HOME/.local/bin/michael-status"
+check_executable "$HOME/.local/bin/michael-ouviu"
+check_executable "$HOME/.local/bin/michael-check"
+check_executable "$HOME/.local/bin/michael-welcome"
 
-echo
-echo "Vosk"
-echo "----"
+check_executable "$HOME/.local/bin/michael-setup-request"
+check_executable "$HOME/.local/bin/abrir-setup"
+check_executable "$HOME/.config/hypr/scripts/abrir-wa-yt.sh"
 
-if [[ -d "$HOME/vosk-model" ]]; then
-    ok "Modelo Vosk encontrado"
+check_executable "$HOME/split-fones.sh"
+check_executable "$HOME/resync-fones.sh"
+
+section "Arquivos principais"
+
+check_file "$HOME/michael_voice.py"
+check_file "$HOME/.local/share/michael/scripts/config.sh"
+
+section "Dependências"
+
+check_command bash
+check_command python3
+check_command systemctl
+check_command flock
+check_command notify-send
+check_command hyprctl
+check_command jq
+check_command pactl
+check_command playerctl
+check_command ydotool
+
+section "Router"
+
+if [ -x "$HOME/.local/bin/michael-router" ]; then
+    ok "Router está executável"
+
+    if [ "${MICHAEL_SOURCE:-manual}" != "manual" ] || [ "${MICHAEL_CHECK_SKIP_ROUTER_SELFTEST:-0}" = "1" ]; then
+        ok "Self-test do router pulado para evitar chamada recursiva com lock"
+    else
+        if "$HOME/.local/bin/michael-router" --dry-run "Michael música" 2>/dev/null | grep -qi "removido"; then
+            ok "Comando removido bloqueado corretamente: música"
+        else
+            fail "Router não bloqueou corretamente: música"
+        fi
+
+        if "$HOME/.local/bin/michael-router" --dry-run "Michael previsão do tempo" 2>/dev/null | grep -qi "removido"; then
+            ok "Comando removido bloqueado corretamente: previsão do tempo"
+        else
+            fail "Router não bloqueou corretamente: previsão do tempo"
+        fi
+
+        if "$HOME/.local/bin/michael-router" --dry-run "Michael agenda" 2>/dev/null | grep -qi "removido"; then
+            ok "Comando removido bloqueado corretamente: agenda"
+        else
+            fail "Router não bloqueou corretamente: agenda"
+        fi
+
+        if "$HOME/.local/bin/michael-router" --dry-run "Michael não desligar" 2>/dev/null | grep -qi "não entendi\|nao entendi"; then
+            ok "Proteção contra 'não desligar' funcionando"
+        else
+            fail "Proteção contra 'não desligar' falhou"
+        fi
+
+        if "$HOME/.local/bin/michael-router" --dry-run "Michael desligar" 2>/dev/null | grep -qi "desligaria"; then
+            ok "Dry-run de desligar funcionando"
+        else
+            fail "Dry-run de desligar falhou"
+        fi
+    fi
 else
-    fail "Modelo Vosk não encontrado em $HOME/vosk-model"
+    fail "Router não está executável"
 fi
 
-echo
-echo "Estado"
-echo "------"
+section "Fones"
 
-if is_paused; then
-    warn "Michael está pausado"
-else
-    ok "Michael não está pausado"
+if [ -f "$HOME/split-fones.sh" ]; then
+    if grep -q 'split_lr' "$HOME/split-fones.sh"; then
+        ok "split-fones usa sink virtual split_lr"
+    else
+        warn "split-fones não menciona split_lr"
+    fi
 fi
 
-if has_pending; then
-    warn "Existe setup pendente antigo"
-else
-    ok "Nenhum setup pendente"
+if [ -f "$HOME/resync-fones.sh" ]; then
+    if grep -q 'playerctl play' "$HOME/resync-fones.sh"; then
+        ok "resync-fones tenta retomar música com playerctl play"
+    else
+        warn "resync-fones não menciona playerctl play"
+    fi
 fi
 
-if apps_open; then
-    ok "Apps/setup detectados como abertos"
-else
-    ok "Apps/setup detectados como fechados"
+default_sink="indisponível"
+if command -v pactl >/dev/null 2>&1; then
+    default_sink="$(pactl get-default-sink 2>/dev/null || echo indisponível)"
 fi
 
-echo
-echo "Resumo"
-echo "------"
+echo "Sink padrão atual: $default_sink"
 
-if [[ "$FAILS" -eq 0 && "$WARNINGS" -eq 0 ]]; then
-    SUMMARY="Tudo certo ✅"
-elif [[ "$FAILS" -eq 0 ]]; then
-    SUMMARY="$WARNINGS aviso(s), sem erro crítico ⚠️"
+section "Welcome"
+
+if grep -qi 'desativado\|sem áudio\|sem audio' "$HOME/.local/bin/michael-welcome" 2>/dev/null; then
+    ok "Áudio de boas-vindas está desativado"
 else
-    SUMMARY="$FAILS erro(s), $WARNINGS aviso(s) ❌"
+    warn "michael-welcome não parece estar marcado como desativado"
 fi
 
-echo "$SUMMARY"
+section "Vosk"
 
-notify_basic "Michael Check" "$SUMMARY"
-log_michael "check executado: fails=$FAILS warnings=$WARNINGS resumo=$SUMMARY"
+if find "$HOME" -maxdepth 3 -type d -iname '*vosk*' 2>/dev/null | head -n 1 | grep -q .; then
+    ok "Modelo/pasta Vosk encontrada"
+else
+    warn "Modelo/pasta Vosk não encontrado em busca rasa"
+fi
+
+section "Resumo"
+
+if [ "$FAILS" -eq 0 ] && [ "$WARNS" -eq 0 ]; then
+    echo "Tudo certo ✅"
+elif [ "$FAILS" -eq 0 ]; then
+    echo "Tudo funcional, com avisos ⚠️"
+else
+    echo "Há problemas para corrigir ❌"
+fi
+
+if [ "${MICHAEL_SOURCE:-manual}" != "manual" ] && command -v notify-send >/dev/null 2>&1; then
+    if [ "$FAILS" -eq 0 ]; then
+        notify-send "Michael Check" "Tudo certo ✅" >/dev/null 2>&1 || true
+    else
+        notify-send "Michael Check" "Há problemas para corrigir ❌" >/dev/null 2>&1 || true
+    fi
+fi
+
+exit "$FAILS"

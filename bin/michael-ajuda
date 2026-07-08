@@ -1,66 +1,80 @@
 #!/usr/bin/env bash
-set -euo pipefail
 
-source "$HOME/.local/share/michael/scripts/config.sh"
+set -u
 
-FULL_BODY="$(cat <<'HELP'
-Michael 1.2 — Comandos de voz
+if [ "${MICHAEL_SOURCE:-manual}" != "manual" ]; then
+    if command -v notify-send >/dev/null 2>&1; then
+        notify-send "Michael - ajuda" "Comandos ativos: começar, mudar, status, check, logs, ouviu, fone, resolver, desligar, piada e me motiva." >/dev/null 2>&1 || true
+    fi
+    exit 0
+fi
 
-Ativação:
-- Michael
-- Michael, começar
+cat <<'TXT'
+Michael 2.0 - Comandos ativos
+=============================
 
-Setup:
-- Michael, começar
-- Michael, setup
+Produtividade
+-------------
+Michael começar / Michael setup
+  Abre o ambiente de trabalho.
 
-Sistema:
-- Michael, status
-- Michael, check
-- Michael, ajuda
-- Michael, logs
+Michael mudar
+  Reorganiza as janelas/setup.
 
-Controle:
-- Michael, pausa
-- Michael, voltar
-- Michael, volume 1
-- Michael, volume 5
-- Michael, volume 10
-- Michael, volume mudo
+Sistema
+-------
+Michael status / Michael estado
+  Mostra o estado do Michael.
 
-Apps:
-- Michael, música
-- Michael, vídeo
-- Michael, mudar
+Michael check
+  Roda uma verificação rápida.
 
-Energia:
-- Michael, desligar
+Michael logs
+  Mostra logs recentes.
 
-Informações:
-- Michael, tempo hoje
-- Michael, agenda
-- Michael, agenda amanhã
-- Michael, agenda semana
-- Michael, agenda editar
+Michael ouviu
+  Mostra as últimas frases que chegaram ao router.
+  Útil quando o Michael entende "Michael", mas erra o comando depois.
 
-Funcionamento:
-- Volume vai de 1 a 10.
-- Volume 1 = 10%.
-- Volume 10 = 100%.
-- Dizer apenas "Michael" toca o som, mostra "Estou ouvindo", baixa o volume para 15% e abre escuta por 5 segundos.
-- Se nenhum comando for dito, o volume volta ao anterior.
-HELP
-)"
+Fones
+-----
+Michael fone
+  Conecta/sincroniza os dois fones.
 
-NOTIFY_BODY="$(cat <<'HELP'
-Comandos:
-começar, música, vídeo, mudar
-tempo hoje, agenda, desligar
-status, check, ajuda, logs
-volume 1-10, pausa, voltar
-HELP
-)"
+Michael resolver
+  Ressincroniza os fones quando bugarem.
 
-echo "$FULL_BODY"
-notify_basic "Michael Ajuda" "$NOTIFY_BODY"
-log_michael "ajuda exibida"
+Energia
+-------
+Michael desligar
+  Desliga o PC.
+
+Interação leve
+--------------
+Michael como você está?
+  Mostra o status.
+
+Michael conte uma piada
+  Responde uma piada curta.
+
+Michael me motiva
+  Responde uma frase curta de incentivo.
+
+Removidos no Michael 2.0
+------------------------
+Michael música
+Michael pausar
+Michael voltar
+Michael previsão do tempo
+Michael agenda
+Michael notícias
+Michael tarefas
+
+Dica
+----
+Se ele entender errado, rode:
+
+  michael ouviu
+
+Assim dá para ver o que foi reconhecido e ajustar os aliases.
+TXT

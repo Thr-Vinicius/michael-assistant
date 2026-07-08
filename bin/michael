@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+ROUTER="$HOME/.local/bin/michael-router"
+
+if [ ! -x "$ROUTER" ]; then
+    echo "ERRO: michael-router não encontrado ou sem permissão de execução."
+    exit 1
+fi
+
+if [ "$#" -eq 0 ]; then
+    echo "Modo terminal do Michael."
+    echo "Digite 'sair' para fechar."
+    echo
+
+    while true; do
+        printf 'Michael> '
+        read -r LINE || break
+
+        case "$LINE" in
+            sair|exit|quit )
+                echo "Fechado."
+                break
+                ;;
+            "" )
+                continue
+                ;;
+            * )
+                "$ROUTER" --source manual "$LINE"
+                ;;
+        esac
+    done
+else
+    "$ROUTER" --source manual "$@"
+fi

@@ -1,0 +1,13 @@
+Export criado em: ter 07 jul 2026 21:03:31 -03
+Pasta: /home/arthur/michael-assistant-release-2026-07-07_210331
+
+Este pacote representa o Michael 2.0 Minimal Stable.
+
+Não inclui:
+- logs;
+- backups;
+- modelos Vosk;
+- áudios;
+- tokens;
+- arquivos .env;
+- LLM/Hermes.

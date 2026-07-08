@@ -1,3 +1,4 @@
+# /home/arthur/.config/systemd/user/michael-voice.service
 [Unit]
 Description=Michael voice listener
 After=graphical-session.target
@@ -11,3 +12,7 @@ Environment=PYTHONUNBUFFERED=1
 
 [Install]
 WantedBy=default.target
+
+# /home/arthur/.config/systemd/user/michael-voice.service.d/audio.conf
+[Service]
+Environment=MICHAEL_ACTIVATION_AUDIO=/home/arthur/audios-michael/conf_1_som.mp3

@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+set -u
+
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/michael"
+ROUTER_LOG="$STATE_DIR/router.log"
+VOICE_LOG="$STATE_DIR/voice-command.log"
+
+last_received_line() {
+    grep 'msg=received normalized=' "$ROUTER_LOG" 2>/dev/null | tail -n 1 || true
+}
+
+format_received_lines() {
+    sed -E 's/^\[([^]]+)\] source=([^ ]+) action=([^ ]+) input="([^"]*)" msg=received normalized="([^"]*)".*$/\1 | \2 | \3 | input: \4 | normalizado: \5/'
+}
+
+if [ "${MICHAEL_SOURCE:-manual}" != "manual" ]; then
+    LAST="$(last_received_line)"
+
+    if command -v notify-send >/dev/null 2>&1; then
+        if [ -n "$LAST" ]; then
+            BODY="$(printf '%s\n' "$LAST" | format_received_lines)"
+            notify-send "Michael ouviu" "$BODY" >/dev/null 2>&1 || true
+        else
+            notify-send "Michael ouviu" "Ainda não encontrei frases recentes no log." >/dev/null 2>&1 || true
+        fi
+    fi
+
+    exit 0
+fi
+
+echo "Michael ouviu - últimas entradas"
+echo "================================"
+echo
+
+if [ -f "$ROUTER_LOG" ]; then
+    echo "Router:"
+    grep 'msg=received normalized=' "$ROUTER_LOG" | tail -n 25 | format_received_lines || true
+else
+    echo "Router: log não encontrado."
+fi
+
+echo
+
+if [ -f "$VOICE_LOG" ]; then
+    echo "Voice command:"
+    tail -n 25 "$VOICE_LOG" || true
+else
+    echo "Voice command: log não encontrado."
+fi

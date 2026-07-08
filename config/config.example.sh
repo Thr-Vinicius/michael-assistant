@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# Configuração base do Michael 2.0 Minimal Stable.
+# Este arquivo é exemplo para o repositório.
+# O config real do PC pode conter compatibilidades antigas.
+
 MICHAEL_HOME="${MICHAEL_HOME:-$HOME/.local/share/michael}"
 STATE_DIR="$MICHAEL_HOME/state"
 LOG_DIR="$MICHAEL_HOME/logs"
@@ -9,21 +13,6 @@ RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 MICHAEL_RUNTIME_DIR="$RUNTIME_DIR/michael"
 
 mkdir -p "$STATE_DIR" "$LOG_DIR" "$AUDIO_DIR" "$MICHAEL_RUNTIME_DIR"
-
-# Estado novo persistente
-PAUSED_FILE="$STATE_DIR/paused"
-PENDING_FILE="$STATE_DIR/setup_pending"
-
-# Estado temporário: some ao reiniciar o PC
-WELCOME_LAST_FILE="$MICHAEL_RUNTIME_DIR/welcome_last"
-
-# Estado antigo, mantido por compatibilidade
-LEGACY_PAUSED="$HOME/.jarvis_paused"
-LEGACY_PENDING="$HOME/.michael_setup_pending"
-LEGACY_WELCOME="$HOME/.michael_welcome_played"
-
-WELCOME_AUDIO="${MICHAEL_WELCOME_AUDIO:-$HOME/audios-michael/boas_vindas_senhor_pronto_para_mais_um_dia.mp3}"
-WELCOME_COOLDOWN_SECONDS="${MICHAEL_WELCOME_COOLDOWN_SECONDS:-3600}"
 
 log_michael() {
     printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >> "$LOG_DIR/michael.log"
@@ -48,84 +37,14 @@ notify_cooldown() {
     now="$(date +%s)"
     last="0"
 
-    if [[ -f "$file" ]]; then
+    if [ -f "$file" ]; then
         last="$(cat "$file" 2>/dev/null || echo 0)"
     fi
 
-    if (( now - last >= seconds )); then
+    if [ "$((now - last))" -ge "$seconds" ]; then
         notify_basic "$title" "$msg"
         echo "$now" > "$file"
         log_michael "notify: $title - $msg"
-    fi
-}
-
-is_paused() {
-    [[ -f "$PAUSED_FILE" || -f "$LEGACY_PAUSED" ]]
-}
-
-set_paused() {
-    touch "$PAUSED_FILE" "$LEGACY_PAUSED"
-}
-
-clear_paused() {
-    rm -f "$PAUSED_FILE" "$LEGACY_PAUSED"
-}
-
-has_pending() {
-    [[ -f "$PENDING_FILE" || -f "$LEGACY_PENDING" ]]
-}
-
-set_pending() {
-    touch "$PENDING_FILE" "$LEGACY_PENDING"
-}
-
-clear_pending() {
-    rm -f "$PENDING_FILE" "$LEGACY_PENDING"
-}
-
-welcome_should_play() {
-    local now
-    local last
-
-    now="$(date +%s)"
-    last="0"
-
-    # LEGACY_WELCOME antigo não manda mais na regra.
-    # Mantemos só para compatibilidade visual/status antigo, mas a regra nova é por sessão + 1h.
-    if [[ -f "$WELCOME_LAST_FILE" ]]; then
-        last="$(cat "$WELCOME_LAST_FILE" 2>/dev/null || echo 0)"
-    fi
-
-    (( now - last >= WELCOME_COOLDOWN_SECONDS ))
-}
-
-set_welcome_played() {
-    date +%s > "$WELCOME_LAST_FILE"
-    touch "$LEGACY_WELCOME"
-}
-
-welcome_played() {
-    [[ -f "$WELCOME_LAST_FILE" ]]
-}
-
-welcome_seconds_left() {
-    local now
-    local last
-    local left
-
-    now="$(date +%s)"
-    last="0"
-
-    if [[ -f "$WELCOME_LAST_FILE" ]]; then
-        last="$(cat "$WELCOME_LAST_FILE" 2>/dev/null || echo 0)"
-    fi
-
-    left=$(( WELCOME_COOLDOWN_SECONDS - (now - last) ))
-
-    if (( left < 0 )); then
-        echo 0
-    else
-        echo "$left"
     fi
 }
 
@@ -138,32 +57,9 @@ apps_open() {
         .[] | select(
             ((.class // "") | test("zen|zen-browser|chrome-cinhimbnkkaeohfgghhklpknlkffjgod-Default|chrome-hnpfjngllnobngcgfapefoaidbinmjnm-Default"; "i"))
             or
-            ((.title // "") | test("Zen|YouTube Music|WhatsApp"; "i"))
+            ((.title // "") | test("Zen|WhatsApp"; "i"))
         )
     ' >/dev/null 2>&1
-}
-
-play_audio() {
-    local file="$1"
-
-    [[ -f "$file" ]] || return 1
-
-    if command -v mpv >/dev/null 2>&1; then
-        mpv --no-terminal --really-quiet "$file" >/dev/null 2>&1 &
-        return 0
-    fi
-
-    if command -v ffplay >/dev/null 2>&1; then
-        ffplay -nodisp -autoexit -loglevel quiet "$file" >/dev/null 2>&1 &
-        return 0
-    fi
-
-    if command -v paplay >/dev/null 2>&1; then
-        paplay "$file" >/dev/null 2>&1 &
-        return 0
-    fi
-
-    return 1
 }
 
 set_system_volume() {

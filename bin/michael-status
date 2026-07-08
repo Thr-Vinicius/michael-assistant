@@ -1,98 +1,95 @@
 #!/usr/bin/env bash
-set -euo pipefail
 
-source "$HOME/.local/share/michael/scripts/config.sh"
+set -u
 
-svc_status() {
-    systemctl --user is-active "$1" 2>/dev/null || true
+unit_value() {
+    local subcmd="$1"
+    local unit="$2"
+    local fallback="$3"
+    local out
+
+    out="$(systemctl --user "$subcmd" "$unit" 2>/dev/null | head -n 1 || true)"
+
+    if [ -z "$out" ]; then
+        out="$fallback"
+    fi
+
+    printf '%s' "$out"
 }
 
-svc_enabled() {
-    systemctl --user is-enabled "$1" 2>/dev/null || true
-}
+voice_active="$(unit_value is-active michael-voice.service unknown)"
+voice_enabled="$(unit_value is-enabled michael-voice.service unknown)"
 
-bool_pt() {
-    case "$1" in
-        sim) echo "sim" ;;
-        não|nao) echo "não" ;;
-        *) echo "$1" ;;
-    esac
-}
+jarvis_active="$(unit_value is-active jarvis-wakeword.service inactive)"
+jarvis_enabled="$(unit_value is-enabled jarvis-wakeword.service disabled)"
 
-VOICE_STATUS="$(svc_status michael-voice.service)"
-VOICE_ENABLED="$(svc_enabled michael-voice.service)"
+clap_active="$(unit_value is-active michael-clap.service inactive)"
+clap_enabled="$(unit_value is-enabled michael-clap.service disabled)"
 
-OLD_VOICE_STATUS="$(svc_status jarvis-wakeword.service)"
-OLD_VOICE_ENABLED="$(svc_enabled jarvis-wakeword.service)"
-
-CLAP_STATUS="$(svc_status michael-clap.service)"
-CLAP_ENABLED="$(svc_enabled michael-clap.service)"
-
-[[ -z "$VOICE_STATUS" ]] && VOICE_STATUS="not-found"
-[[ -z "$VOICE_ENABLED" ]] && VOICE_ENABLED="not-found"
-[[ -z "$OLD_VOICE_STATUS" ]] && OLD_VOICE_STATUS="not-found"
-[[ -z "$OLD_VOICE_ENABLED" ]] && OLD_VOICE_ENABLED="not-found"
-[[ -z "$CLAP_STATUS" ]] && CLAP_STATUS="not-found"
-[[ -z "$CLAP_ENABLED" ]] && CLAP_ENABLED="not-found"
-
-if is_paused; then
-    PAUSED_STATUS="sim"
-else
-    PAUSED_STATUS="não"
+router_status="não encontrado"
+if [ -x "$HOME/.local/bin/michael-router" ]; then
+    router_status="ok"
 fi
 
-if has_pending; then
-    PENDING_STATUS="sim"
-else
-    PENDING_STATUS="não"
+terminal_status="não encontrado"
+if [ -x "$HOME/.local/bin/michael" ]; then
+    terminal_status="ok"
 fi
 
-if apps_open; then
-    APPS_STATUS="sim"
-    SETUP_LABEL="aberto"
-else
-    APPS_STATUS="não"
-    SETUP_LABEL="fechado"
+setup_aberto="não"
+if command -v hyprctl >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
+    if hyprctl clients -j 2>/dev/null | jq -e '
+        .[] | select(
+            (.class | test("zen|zen-browser|chrome-cinhimbnkkaeohfgghhklpknlkffjgod-Default|chrome-hnpfjngllnobngcgfapefoaidbinmjnm-Default"; "i"))
+            or
+            (.title | test("Zen|YouTube Music|WhatsApp"; "i"))
+        )
+    ' >/dev/null 2>&1; then
+        setup_aberto="sim"
+    fi
 fi
 
+ydotool_status="não instalado"
 if command -v ydotool >/dev/null 2>&1; then
-    YDO_STATUS="instalado"
-else
-    YDO_STATUS="não encontrado"
+    ydotool_status="instalado"
 fi
 
-VOICE_PROCS="$(pgrep -af 'michael_voice.py|jarvis_wakeword.py|clap_setup.py' || true)"
-VOICE_PROC_COUNT="$(printf '%s\n' "$VOICE_PROCS" | sed '/^$/d' | wc -l)"
+playerctl_status="não instalado"
+if command -v playerctl >/dev/null 2>&1; then
+    playerctl_status="instalado"
+fi
 
-FULL_BODY="$(cat <<STATUS
-Michael 1.2 Status
-===================
+audio_processes="$(pgrep -af 'michael_voice.py|vosk' 2>/dev/null || true)"
+audio_count="$(printf '%s\n' "$audio_processes" | sed '/^$/d' | wc -l)"
 
-Voz principal:      $VOICE_STATUS / $VOICE_ENABLED
-Voz antiga/Jarvis:  $OLD_VOICE_STATUS / $OLD_VOICE_ENABLED
-Palmas:             $CLAP_STATUS / $CLAP_ENABLED
+default_sink="indisponível"
+if command -v pactl >/dev/null 2>&1; then
+    default_sink="$(pactl get-default-sink 2>/dev/null || echo indisponível)"
+fi
 
-Pausado:            $PAUSED_STATUS
-Setup pendente:     $PENDING_STATUS
-Apps/setup aberto:  $APPS_STATUS
-ydotool:            $YDO_STATUS
+cat <<TXT
+Michael 2.0 Status
+==================
 
-Processos de áudio: $VOICE_PROC_COUNT
+Serviço principal:     ${voice_active} / ${voice_enabled}
+Router seguro:         ${router_status}
+Modo terminal:         ${terminal_status}
 
-$VOICE_PROCS
-STATUS
-)"
+Voz antiga/Jarvis:     ${jarvis_active} / ${jarvis_enabled}
+Palmas:                ${clap_active} / ${clap_enabled}
 
-NOTIFY_BODY="$(cat <<STATUS
-Voz: $VOICE_STATUS / $VOICE_ENABLED
-Setup: $SETUP_LABEL | Pausado: $PAUSED_STATUS
-Jarvis: $OLD_VOICE_STATUS | Palmas: $CLAP_STATUS
-Processos de áudio: $VOICE_PROC_COUNT
-STATUS
-)"
+Setup aberto:          ${setup_aberto}
+ydotool:               ${ydotool_status}
+playerctl:             ${playerctl_status}
 
-echo "$FULL_BODY"
+Sink padrão:           ${default_sink}
+Processos de áudio:    ${audio_count}
 
-notify_basic "Michael Status" "$NOTIFY_BODY"
+Comandos removidos:    música, pausar, voltar, tempo, agenda
+TXT
 
-log_michael "status: voz=$VOICE_STATUS/$VOICE_ENABLED voz_antiga=$OLD_VOICE_STATUS/$OLD_VOICE_ENABLED palmas=$CLAP_STATUS/$CLAP_ENABLED pausado=$PAUSED_STATUS pendente=$PENDING_STATUS apps=$APPS_STATUS processos_audio=$VOICE_PROC_COUNT"
+if [ -n "$audio_processes" ]; then
+    echo
+    echo "Processos:"
+    printf '%s\n' "$audio_processes"
+fi

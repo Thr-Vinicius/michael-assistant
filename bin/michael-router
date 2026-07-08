@@ -1,0 +1,444 @@
+#!/usr/bin/env bash
+
+set -u
+
+SOURCE="manual"
+DRY_RUN=0
+YES=0
+ARGS=()
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --source)
+            SOURCE="${2:-manual}"
+            shift 2
+            ;;
+        --source=*)
+            SOURCE="${1#--source=}"
+            shift
+            ;;
+        --dry-run)
+            DRY_RUN=1
+            shift
+            ;;
+        --yes|-y)
+            YES=1
+            shift
+            ;;
+        *)
+            ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
+
+INPUT="${ARGS[*]:-}"
+
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/michael"
+LOG_FILE="$STATE_DIR/router.log"
+LOCK_FILE="${XDG_RUNTIME_DIR:-/tmp}/michael-router.lock"
+
+mkdir -p "$STATE_DIR"
+
+log() {
+    printf '[%s] source=%s action=%s input="%s" msg=%s\n' \
+        "$(date '+%Y-%m-%d %H:%M:%S')" \
+        "$SOURCE" \
+        "${ACTION:-unknown}" \
+        "$INPUT" \
+        "$*" >> "$LOG_FILE"
+}
+
+notify() {
+    local title="$1"
+    local body="$2"
+
+    if command -v notify-send >/dev/null 2>&1; then
+        notify-send "$title" "$body" >/dev/null 2>&1 || true
+    fi
+}
+
+manual_msg() {
+    if [ "$SOURCE" = "manual" ]; then
+        printf '%s\n' "$*"
+    fi
+}
+
+normalize_text() {
+    python3 - "$INPUT" <<'PY'
+import sys
+import unicodedata
+import re
+
+text = " ".join(sys.argv[1:])
+text = unicodedata.normalize("NFKD", text)
+text = text.encode("ascii", "ignore").decode("ascii")
+text = text.lower()
+text = re.sub(r"[^a-z0-9 ]+", " ", text)
+text = re.sub(r"\s+", " ", text).strip()
+
+if text.startswith("michael "):
+    text = text[len("michael "):].strip()
+
+print(text)
+PY
+}
+
+NORM="$(normalize_text)"
+
+detect_action() {
+    local t="$1"
+
+    case "$t" in
+        "" )
+            echo "none"
+            return
+            ;;
+    esac
+
+    case "$t" in
+        *"como voce esta"*|*"como voce ta"*|*"como ta"*|*"qual seu status"*|*"qual e seu status"*|*"qual seu estado"*)
+            echo "status"
+            return
+            ;;
+
+        *"o que voce faz"*|*"quais comandos"*|*"lista comandos"*|*"comandos disponiveis"*)
+            echo "ajuda"
+            return
+            ;;
+    esac
+
+    case "$t" in
+        como\ *|*" como "*|por\ que\ *|*" por que "*|porque\ *|*" porque "*|o\ que\ *|*" o que "*|qual\ *|*" qual "*|quais\ *|*" quais "*|quando\ *|*" quando "*|onde\ *|*" onde "*|quem\ *|*" quem "*)
+            echo "none"
+            return
+            ;;
+    esac
+
+    case "$t" in
+        *"pausa"*|*"pausar"*|*"voltar"*|*"ativar"*|*"musica"*|*"youtube music"*|*"music"*|*"tempo"*|*"clima"*|*"previsao"*|*"agenda"*|*"calendario"*|*"noticia"*|*"noticias"*|*"tarefa"*|*"tarefas"*|*"standard notes"*|*"obsidian"*|*"video"*|*"videos"*|*"volume"*)
+            echo "removido"
+            return
+            ;;
+
+        *"nao desligar"*|*"nao desliga"*|*"não desligar"*|*"não desliga"* )
+            echo "none"
+            return
+            ;;
+
+        *"desligar"*|*"desliga"*|*"shutdown"*|*"poweroff"*|*"encerrar pc"*|*"encerrar computador"* )
+            echo "desligar"
+            return
+            ;;
+
+        *"resolver"*|*"bugado"*|*"bugados"*|*"bugou"*|*"ressincronizar"*|*"ressincroniza"*|*"resincronizar"*|*"resincroniza"*|*"resync"*|*"sincronizar fones"* )
+            echo "resolver"
+            return
+            ;;
+
+        *"fone"*|*"fones"*|*"bluetooth"*|*"conectar fones"* )
+            echo "fone"
+            return
+            ;;
+
+        *"comecar"*|*"comeca"*|*"comece"*|*"setup"*|*"bora trabalhar"*|*"vamos trabalhar"*|*"abrir setup"*|*"iniciar trabalho"* )
+            echo "setup"
+            return
+            ;;
+
+        *"mudar"*|*"muda"*|*"organiza minha bagunca"*|*"organizar minha bagunca"*|*"organiza a bagunca"*|*"arrumar janelas"*|*"reorganizar"* )
+            echo "mudar"
+            return
+            ;;
+
+        *"status"*|*"estado"*|*"estados"*|*"estatus"* )
+            echo "status"
+            return
+            ;;
+
+        *"check"*|*"diagnostico"*|*"verificar sistema"*|*"saude do sistema"* )
+            echo "check"
+            return
+            ;;
+
+        *"logs"*|*"log"*|*"ultimos logs"* )
+            echo "logs"
+            return
+            ;;
+
+        *"ouviu"*|*"o que voce ouviu"*|*"o que entendeu"*|*"voce entendeu"*|*"ultima frase"*|*"ultimo comando"* )
+            echo "ouviu"
+            return
+            ;;
+
+        *"ajuda"*|*"comandos"*|*"help"* )
+            echo "ajuda"
+            return
+            ;;
+
+        *"piada"*|*"conte uma piada"* )
+            echo "piada"
+            return
+            ;;
+
+        *"motiva"*|*"motivacao"*|*"me anima"*|*"empurrao"*|*"foco"* )
+            echo "motivar"
+            return
+            ;;
+
+        *"oi"*|*"ola"*|*"bom dia"*|*"boa tarde"*|*"boa noite"* )
+            echo "conversa"
+            return
+            ;;
+
+        * )
+            echo "none"
+            return
+            ;;
+    esac
+}
+
+ACTION="$(detect_action "$NORM")"
+
+run_cmd() {
+    local label="$1"
+    shift
+
+    if [ "$DRY_RUN" -eq 1 ]; then
+        manual_msg "DRY-RUN: ação '$ACTION' chamaria: $*"
+        log "dry-run command=$*"
+        return 0
+    fi
+
+    case "$label" in
+        ajuda|status|ouviu|logs|check)
+            HAS_VISIBLE_OUTPUT=1
+            ;;
+        *)
+            HAS_VISIBLE_OUTPUT=0
+            ;;
+    esac
+
+    if [ "$SOURCE" = "manual" ]; then
+        local tmp
+        tmp="$(mktemp)"
+
+        if [ "$label" = "check" ]; then
+            MICHAEL_CHECK_SKIP_ROUTER_SELFTEST=1 MICHAEL_SOURCE="$SOURCE" "$@" > "$tmp" 2>&1
+        else
+            MICHAEL_SOURCE="$SOURCE" "$@" > "$tmp" 2>&1
+        fi
+        local rc=$?
+
+        if [ -s "$tmp" ]; then
+            cat "$tmp"
+            cat "$tmp" >> "$LOG_FILE"
+        fi
+
+        rm -f "$tmp"
+
+        if [ "$rc" -eq 0 ]; then
+            if [ "$HAS_VISIBLE_OUTPUT" -eq 0 ]; then
+                manual_msg "OK: $label"
+            fi
+            log "ok label=$label"
+            return 0
+        else
+            manual_msg "ERRO: $label"
+            notify "Michael" "Erro ao executar: $label"
+            log "error rc=$rc label=$label"
+            return "$rc"
+        fi
+    fi
+
+    if [ "$label" = "check" ]; then
+        MICHAEL_CHECK_SKIP_ROUTER_SELFTEST=1 MICHAEL_SOURCE="$SOURCE" "$@" >> "$LOG_FILE" 2>&1
+    else
+        MICHAEL_SOURCE="$SOURCE" "$@" >> "$LOG_FILE" 2>&1
+    fi
+    local rc=$?
+
+    if [ "$rc" -eq 0 ]; then
+        log "ok label=$label"
+        return 0
+    else
+        notify "Michael" "Erro ao executar: $label"
+        log "error rc=$rc label=$label"
+        return "$rc"
+    fi
+}
+
+run_existing() {
+    local label="$1"
+    local path="$2"
+
+    if [ ! -e "$path" ]; then
+        manual_msg "ERRO: arquivo não encontrado: $path"
+        notify "Michael" "Script não encontrado: $label"
+        log "missing path=$path"
+        return 1
+    fi
+
+    if [ ! -x "$path" ]; then
+        chmod +x "$path" >/dev/null 2>&1 || true
+    fi
+
+    run_cmd "$label" "$path"
+}
+
+do_shutdown() {
+    if [ "$DRY_RUN" -eq 1 ]; then
+        manual_msg "DRY-RUN: ação 'desligar' desligaria o PC."
+        log "dry-run shutdown"
+        return 0
+    fi
+
+    if [ "$SOURCE" = "manual" ] && [ "$YES" -ne 1 ]; then
+        printf 'Desligar o PC agora? [s/N] '
+        read -r RESP
+
+        case "$RESP" in
+            s|S|sim|SIM|Sim )
+                ;;
+            * )
+                manual_msg "Cancelado."
+                log "shutdown canceled"
+                return 0
+                ;;
+        esac
+    fi
+
+    notify "Michael" "Desligando o PC."
+    manual_msg "Desligando o PC..."
+    log "shutdown requested"
+
+    if [ -x "$HOME/.local/bin/michael-desligar" ]; then
+        nohup "$HOME/.local/bin/michael-desligar" >> "$LOG_FILE" 2>&1 &
+        return 0
+    fi
+
+    systemctl poweroff >> "$LOG_FILE" 2>&1
+}
+
+do_logs() {
+    if [ "$DRY_RUN" -eq 1 ]; then
+        manual_msg "DRY-RUN: mostraria logs recentes do Michael."
+        log "dry-run logs"
+        return 0
+    fi
+
+    if [ "$SOURCE" = "manual" ]; then
+        echo "=== Router log ==="
+        tail -n 40 "$LOG_FILE" 2>/dev/null || true
+        echo
+        echo "=== michael-voice.service ==="
+        journalctl --user -u michael-voice.service -n 40 --no-pager 2>/dev/null || true
+    else
+        journalctl --user -u michael-voice.service -n 80 --no-pager >> "$LOG_FILE" 2>&1 || true
+        notify "Michael" "Logs recentes registrados."
+    fi
+
+    log "logs shown"
+}
+
+respond_only() {
+    local msg="$1"
+
+    if [ "$DRY_RUN" -eq 1 ]; then
+        manual_msg "DRY-RUN: responderia: $msg"
+        log "dry-run response=$msg"
+        return 0
+    fi
+
+    manual_msg "$msg"
+
+    if [ "$SOURCE" != "manual" ]; then
+        notify "Michael" "$msg"
+    fi
+
+    log "response=$msg"
+}
+
+execute_action() {
+    case "$ACTION" in
+        setup)
+            if [ -x "$HOME/.local/bin/michael-setup-request" ] || [ -e "$HOME/.local/bin/michael-setup-request" ]; then
+                run_existing "setup" "$HOME/.local/bin/michael-setup-request"
+            else
+                run_existing "setup" "$HOME/.local/bin/abrir-setup"
+            fi
+            ;;
+
+        mudar)
+            run_existing "mudar" "$HOME/.config/hypr/scripts/abrir-wa-yt.sh"
+            ;;
+
+        status)
+            run_existing "status" "$HOME/.local/bin/michael-status"
+            ;;
+
+        check)
+            run_existing "check" "$HOME/.local/bin/michael-check"
+            ;;
+
+        logs)
+            do_logs
+            ;;
+
+        fone)
+            run_existing "fone" "$HOME/split-fones.sh"
+            ;;
+
+        resolver)
+            run_existing "resolver" "$HOME/resync-fones.sh"
+            ;;
+
+        ouviu)
+            run_existing "ouviu" "$HOME/.local/bin/michael-ouviu"
+            ;;
+
+        ajuda)
+            run_existing "ajuda" "$HOME/.local/bin/michael-ajuda"
+            ;;
+
+        desligar)
+            do_shutdown
+            ;;
+
+        piada)
+            respond_only "Por que o Linux não fica perdido? Porque sempre tem um path."
+            ;;
+
+        motivar)
+            respond_only "Bora. Pouco, bem feito e sem inventar moda."
+            ;;
+
+        conversa)
+            respond_only "Tô por aqui. Manda o comando."
+            ;;
+
+        removido)
+            respond_only "Esse comando foi removido no Michael 2.0 para manter tudo mais simples."
+            ;;
+
+        none)
+            respond_only "Não entendi com segurança. Não executei nada."
+            ;;
+
+        *)
+            respond_only "Ação bloqueada."
+            ;;
+    esac
+}
+
+{
+    flock -n 9 || {
+        manual_msg "Michael já está executando outra ação."
+        log "blocked duplicate"
+        exit 1
+    }
+
+    log "received normalized=\"$NORM\""
+
+    execute_action
+} 9>"$LOCK_FILE"
