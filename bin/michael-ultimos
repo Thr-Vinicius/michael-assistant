@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source "$HOME/.local/share/michael/scripts/config.sh"
+
+if [[ ! -f "$LOG_DIR/michael.log" ]]; then
+    notify_basic "Michael Logs" "Ainda não há logs do Michael."
+    exit 0
+fi
+
+BODY="$(tail -n 5 "$LOG_DIR/michael.log")"
+notify_basic "Michael Logs" "$BODY"

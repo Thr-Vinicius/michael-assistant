@@ -61,11 +61,18 @@ michael-router
 
 ## Welcome
 
-O áudio de boas-vindas ao ligar o PC foi desativado.
+O áudio e o script de boas-vindas na inicialização foram removidos da versão
+atual. O Hyprland não executa mais `michael-welcome` durante o login.
 
-Arquivo antigo de áudio removido do uso:
+O comportamento antigo permanece preservado em `legacy/michael-1.2/`.
 
-/home/arthur/audios-michael/boas_vindas_senhor_pronto_para_mais_um_dia.mp3
+## Sessão e modo game
+
+- `michael-session-ready` prepara o ambiente gráfico e reinicia o serviço de voz
+  depois que a sessão do Hyprland está pronta.
+- `michael-zero-toggle` permite desligar e reativar temporariamente a escuta.
+- `michael-desligar` executa a rotina personalizada usada pelo comando de
+  desligamento.
 
 ## LLM/Hermes
 

@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source "$HOME/.local/share/michael/scripts/config.sh"
+
+LOCK_FILE="$MICHAEL_RUNTIME_DIR/resolver-fones.lock"
+FONE_LOG="$LOG_DIR/fones.log"
+
+if command -v flock >/dev/null 2>&1; then
+    exec 9>"$LOCK_FILE"
+    if ! flock -n 9; then
+        notify_cooldown "resolver_running" 10 "Michael" "Já estou ressincrozando os fones."
+        log_michael "resolver cancelado: outro processo já está rodando"
+        exit 0
+    fi
+fi
+
+SCRIPT=""
+
+for candidate in \
+    "$HOME/resync-fones.sh" \
+    "$HOME/.local/bin/resync-fones.sh" \
+    "$HOME/.config/hypr/scripts/resync-fones.sh" \
+    "$HOME/scripts/resync-fones.sh"
+do
+    if [[ -x "$candidate" ]]; then
+        SCRIPT="$candidate"
+        break
+    fi
+done
+
+if [[ -z "$SCRIPT" ]]; then
+    notify_basic "Michael" "Não encontrei o script resync-fones.sh."
+    log_michael "resolver falhou: resync-fones.sh não encontrado"
+    exit 1
+fi
+
+notify_basic "Michael" "Ressincrozando a gambiarra..."
+log_michael "resolver iniciado: $SCRIPT"
+
+if "$SCRIPT" >> "$FONE_LOG" 2>&1; then
+    notify_basic "Michael" "Fones ressincrozados."
+    log_michael "resolver finalizado"
+else
+    notify_basic "Michael" "Não consegui ressincrozar os fones."
+    log_michael "resolver falhou; veja $FONE_LOG"
+    exit 1
+fi

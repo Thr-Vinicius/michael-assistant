@@ -1,0 +1,42 @@
+# Logs
+*.log
+logs/
+*.out
+*.err
+
+# Backups
+backups/
+*.bak
+*.backup
+*.old
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Áudio/cache
+*.wav
+*.mp3
+*.flac
+*.ogg
+cache/
+tmp/
+
+# Modelos grandes
+vosk-model*/
+models/
+
+# Segredos/configs reais
+.env
+*.env
+secrets/
+tokens/
+config.sh
+
+# Sistema/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

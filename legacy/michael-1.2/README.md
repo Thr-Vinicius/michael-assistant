@@ -1,4 +1,9 @@
-# Estado do Michael 1.2
+# Estado arquivado do Michael 1.2
+
+> Esta pasta preserva a fotografia disponível no antigo clone local. Alguns
+> comandos daquela época dependiam de scripts instalados fora do repositório e,
+> por isso, o conteúdo não deve ser tratado como um instalador autônomo completo.
+> Os arquivos foram mantidos como estavam, sem receber código do Michael 2.0.
 
 ## Sistema
 

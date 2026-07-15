@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source "$HOME/.local/share/michael/scripts/config.sh"
+
+# Dá tempo do Hyprland, Wayland, DBus e Caelestia terminarem de subir.
+sleep 8
+
+log_michael "session-ready: importando ambiente gráfico para systemd"
+
+systemctl --user import-environment \
+    WAYLAND_DISPLAY \
+    DISPLAY \
+    XAUTHORITY \
+    XDG_CURRENT_DESKTOP \
+    XDG_SESSION_TYPE \
+    XDG_RUNTIME_DIR \
+    HYPRLAND_INSTANCE_SIGNATURE \
+    DBUS_SESSION_BUS_ADDRESS \
+    PATH || true
+
+if command -v dbus-update-activation-environment >/dev/null 2>&1; then
+    dbus-update-activation-environment --systemd \
+        WAYLAND_DISPLAY \
+        DISPLAY \
+        XAUTHORITY \
+        XDG_CURRENT_DESKTOP \
+        XDG_SESSION_TYPE \
+        XDG_RUNTIME_DIR \
+        HYPRLAND_INSTANCE_SIGNATURE \
+        DBUS_SESSION_BUS_ADDRESS \
+        PATH || true
+fi
+
+log_michael "session-ready: WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-vazio}"
+log_michael "session-ready: HYPRLAND_INSTANCE_SIGNATURE=${HYPRLAND_INSTANCE_SIGNATURE:-vazio}"
+
+systemctl --user restart michael-voice.service || true
+
+log_michael "session-ready: michael-voice.service reiniciado após sessão gráfica"
