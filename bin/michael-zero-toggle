@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+set -u
+
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/michael"
+LOG_FILE="$STATE_DIR/zero.log"
+
+mkdir -p "$STATE_DIR"
+
+log() {
+    printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >> "$LOG_FILE"
+}
+
+notify() {
+    if command -v notify-send >/dev/null 2>&1; then
+        notify-send "$1" "$2" >/dev/null 2>&1 || true
+    fi
+}
+
+SERVICE="michael-voice.service"
+
+if systemctl --user is-active --quiet "$SERVICE"; then
+    systemctl --user stop "$SERVICE" >/dev/null 2>&1
+
+    if systemctl --user is-active --quiet "$SERVICE"; then
+        notify "Michael Zero" "Não consegui parar a escuta."
+        log "erro ao parar $SERVICE"
+        exit 1
+    fi
+
+    notify "Michael Zero" "Escuta desligada. Modo game ativado."
+    log "serviço parado: $SERVICE"
+else
+    systemctl --user start "$SERVICE" >/dev/null 2>&1
+
+    if systemctl --user is-active --quiet "$SERVICE"; then
+        notify "Michael Zero" "Escuta reativada."
+        log "serviço iniciado: $SERVICE"
+        exit 0
+    fi
+
+    notify "Michael Zero" "Não consegui iniciar a escuta."
+    log "erro ao iniciar $SERVICE"
+    exit 1
+fi

@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source "$HOME/.local/share/michael/scripts/config.sh"
+
+LOCK_FILE="$MICHAEL_RUNTIME_DIR/abrir_setup.lock"
+
+if command -v flock >/dev/null 2>&1; then
+    exec 9>"$LOCK_FILE"
+    if ! flock -n 9; then
+        notify_cooldown "setup_running" 20 "Michael" "Setup já está sendo aberto."
+        log_michael "abrir-setup cancelado: outro processo já está rodando"
+        exit 0
+    fi
+fi
+
+if is_paused; then
+    notify_cooldown "paused" 30 "Michael" "Estou pausado 💤"
+    log_michael "abrir-setup cancelado: pausado"
+    exit 0
+fi
+
+if apps_open && [[ "${MICHAEL_FORCE_SETUP:-0}" != "1" ]]; then
+    notify_cooldown "setup_open" 20 "Michael" "Setup já parece estar aberto."
+    log_michael "abrir-setup cancelado: Zen/YouTube Music/WhatsApp já aberto"
+    exit 0
+fi
+
+if [[ "${MICHAEL_FORCE_SETUP:-0}" == "1" ]]; then
+    log_michael "abrir-setup em modo forçado: ignorando apps já abertos"
+fi
+
+clear_pending
+log_michael "abrir-setup iniciado"
+
+ZEN_CMD=""
+
+if command -v zen-browser >/dev/null 2>&1; then
+    ZEN_CMD="zen-browser"
+elif command -v zen >/dev/null 2>&1; then
+    ZEN_CMD="zen"
+fi
+
+if [[ -n "$ZEN_CMD" ]]; then
+    nohup "$ZEN_CMD" >/dev/null 2>&1 &
+    log_michael "Zen aberto com comando: $ZEN_CMD"
+else
+    notify_basic "Michael" "Não encontrei o comando do Zen Browser."
+    log_michael "Zen não encontrado"
+fi
+
+sleep 2
+
+WA_YT_SCRIPT="$HOME/.config/hypr/scripts/abrir-wa-yt.sh"
+
+if [[ -x "$WA_YT_SCRIPT" ]]; then
+    "$WA_YT_SCRIPT" >/dev/null 2>&1
+    log_michael "Script WhatsApp/YouTube Music finalizado"
+else
+    notify_basic "Michael" "Script abrir-wa-yt.sh não encontrado ou sem permissão."
+    log_michael "abrir-wa-yt.sh ausente ou sem permissão"
+fi
+
+set_system_volume "30%"
+notify_basic "Michael" "Setup aberto."
+log_michael "abrir-setup finalizado; volume ajustado para 30%"

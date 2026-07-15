@@ -124,7 +124,6 @@ check_executable "$HOME/.local/bin/michael-ajuda"
 check_executable "$HOME/.local/bin/michael-status"
 check_executable "$HOME/.local/bin/michael-ouviu"
 check_executable "$HOME/.local/bin/michael-check"
-check_executable "$HOME/.local/bin/michael-welcome"
 
 check_executable "$HOME/.local/bin/michael-setup-request"
 check_executable "$HOME/.local/bin/abrir-setup"
@@ -217,14 +216,6 @@ if command -v pactl >/dev/null 2>&1; then
 fi
 
 echo "Sink padrão atual: $default_sink"
-
-section "Welcome"
-
-if grep -qi 'desativado\|sem áudio\|sem audio' "$HOME/.local/bin/michael-welcome" 2>/dev/null; then
-    ok "Áudio de boas-vindas está desativado"
-else
-    warn "michael-welcome não parece estar marcado como desativado"
-fi
 
 section "Vosk"
 

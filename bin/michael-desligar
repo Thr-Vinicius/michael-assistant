@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source "$HOME/.local/share/michael/scripts/config.sh"
+
+LOCK_FILE="$MICHAEL_RUNTIME_DIR/desligar.lock"
+SHUTDOWN_AUDIO="$HOME/audios-michael/deslig.mp3"
+UPDATE_LOG="$LOG_DIR/desligar-update.log"
+
+if command -v flock >/dev/null 2>&1; then
+    exec 9>"$LOCK_FILE"
+    if ! flock -n 9; then
+        notify_cooldown "desligar_running" 20 "Michael" "Rotina de desligamento já está em execução."
+        log_michael "desligar cancelado: já em execução"
+        exit 0
+    fi
+fi
+
+play_blocking() {
+    local file="$1"
+
+    [[ -f "$file" ]] || {
+        log_michael "desligar: áudio não encontrado: $file"
+        return 1
+    }
+
+    if command -v mpv >/dev/null 2>&1; then
+        mpv --no-terminal --really-quiet "$file" >/dev/null 2>&1 || true
+        return 0
+    fi
+
+    if command -v ffplay >/dev/null 2>&1; then
+        ffplay -nodisp -autoexit -loglevel quiet "$file" >/dev/null 2>&1 || true
+        return 0
+    fi
+
+    if command -v paplay >/dev/null 2>&1; then
+        paplay "$file" >/dev/null 2>&1 || true
+        return 0
+    fi
+
+    return 1
+}
+
+force_close_graphical_apps() {
+    if ! command -v hyprctl >/dev/null 2>&1 || ! command -v jq >/dev/null 2>&1; then
+        log_michael "desligar: hyprctl/jq ausente; não fechei apps gráficos"
+        return 0
+    fi
+
+    PIDS="$(hyprctl clients -j | jq -r '.[].pid' 2>/dev/null | sort -u || true)"
+
+    if [[ -z "$PIDS" ]]; then
+        log_michael "desligar: nenhum app gráfico encontrado"
+        return 0
+    fi
+
+    log_michael "desligar: encerrando apps gráficos: $PIDS"
+
+    # Primeiro tenta encerrar normalmente.
+    echo "$PIDS" | xargs -r kill -TERM >/dev/null 2>&1 || true
+
+    sleep 3
+
+    # Depois força os que sobreviverem.
+    echo "$PIDS" | xargs -r kill -KILL >/dev/null 2>&1 || true
+
+    log_michael "desligar: apps gráficos fechados forçadamente"
+}
+
+run_updates() {
+    {
+        echo
+        echo "=============================="
+        echo "Michael desligar - $(date '+%Y-%m-%d %H:%M:%S')"
+        echo "=============================="
+        echo
+
+        echo "[1/3] pacman -Syu"
+        sudo -n /usr/bin/pacman -Syu --noconfirm
+
+        echo
+        echo "[2/3] yay -Syu"
+        if command -v yay >/dev/null 2>&1; then
+            yes | yay -Syu --noconfirm --answerclean All --answerdiff None --answeredit None --removemake
+        else
+            echo "yay não encontrado. Pulando."
+        fi
+
+        echo
+        echo "[3/3] flatpak update"
+        if command -v flatpak >/dev/null 2>&1; then
+            flatpak update -y
+        else
+            echo "flatpak não encontrado. Pulando."
+        fi
+
+        echo
+        echo "Atualizações finalizadas em $(date '+%Y-%m-%d %H:%M:%S')"
+    } >> "$UPDATE_LOG" 2>&1
+}
+
+log_michael "desligar iniciado"
+notify_basic "Michael" "Iniciando rotina de desligamento."
+
+force_close_graphical_apps
+
+notify_basic "Michael" "Atualizando sistema antes de desligar."
+log_michael "desligar: iniciando atualizações"
+
+if run_updates; then
+    log_michael "desligar: atualizações concluídas"
+else
+    log_michael "desligar: atualizações retornaram erro; veja $UPDATE_LOG"
+fi
+
+set_system_volume "60%"
+sleep 0.2
+
+play_blocking "$SHUTDOWN_AUDIO" || true
+
+log_michael "desligar: enviando poweroff"
+systemctl poweroff || sudo -n /usr/bin/systemctl poweroff
