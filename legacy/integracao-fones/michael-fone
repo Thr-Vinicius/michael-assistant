@@ -18,7 +18,6 @@ fi
 SCRIPT=""
 
 for candidate in \
-    "$HOME/split-fones.sh" \
     "$HOME/.local/bin/split-fones.sh" \
     "$HOME/.config/hypr/scripts/split-fones.sh" \
     "$HOME/scripts/split-fones.sh"

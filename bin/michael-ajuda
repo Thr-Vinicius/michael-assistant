@@ -4,7 +4,7 @@ set -u
 
 if [ "${MICHAEL_SOURCE:-manual}" != "manual" ]; then
     if command -v notify-send >/dev/null 2>&1; then
-        notify-send "Michael - ajuda" "Comandos ativos: começar, mudar, status, check, logs, ouviu, fone, resolver, desligar, piada e me motiva." >/dev/null 2>&1 || true
+        notify-send "Michael - ajuda" "Comandos ativos: começar, mudar, status, check, logs, ouviu, resolver, desligar, piada e me motiva." >/dev/null 2>&1 || true
     fi
     exit 0
 fi
@@ -38,11 +38,12 @@ Michael ouviu
 
 Fones
 -----
-Michael fone
-  Conecta/sincroniza os dois fones.
+O serviço fones-watchdog configura automaticamente os fones.
+O antigo comando "Michael fone" foi desativado por ser redundante.
 
 Michael resolver
-  Ressincroniza os fones quando bugarem.
+  Solicita ao watchdog uma nova sincronização dos fones.
+  Requer o projeto linux-bluetooth-split-stereo.
 
 Energia
 -------

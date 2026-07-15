@@ -124,13 +124,12 @@ check_executable "$HOME/.local/bin/michael-ajuda"
 check_executable "$HOME/.local/bin/michael-status"
 check_executable "$HOME/.local/bin/michael-ouviu"
 check_executable "$HOME/.local/bin/michael-check"
+check_executable "$HOME/.local/bin/michael-resolver"
 
 check_executable "$HOME/.local/bin/michael-setup-request"
 check_executable "$HOME/.local/bin/abrir-setup"
 check_executable "$HOME/.config/hypr/scripts/abrir-wa-yt.sh"
 
-check_executable "$HOME/split-fones.sh"
-check_executable "$HOME/resync-fones.sh"
 
 section "Arquivos principais"
 
@@ -176,6 +175,12 @@ if [ -x "$HOME/.local/bin/michael-router" ]; then
             fail "Router não bloqueou corretamente: agenda"
         fi
 
+       if "$HOME/.local/bin/michael-router" --dry-run "Michael fone" 2>/dev/null | grep -qi "removido"; then
+           ok "Comando substituído pelo watchdog bloqueado corretamente: fone"
+       else
+           fail "Router não bloqueou corretamente: fone"
+       fi
+
         if "$HOME/.local/bin/michael-router" --dry-run "Michael não desligar" 2>/dev/null | grep -qi "não entendi\|nao entendi"; then
             ok "Proteção contra 'não desligar' funcionando"
         else
@@ -192,22 +197,39 @@ else
     fail "Router não está executável"
 fi
 
-section "Fones"
+section "Integração opcional: fones"
 
-if [ -f "$HOME/split-fones.sh" ]; then
-    if grep -q 'split_lr' "$HOME/split-fones.sh"; then
-        ok "split-fones usa sink virtual split_lr"
-    else
-        warn "split-fones não menciona split_lr"
-    fi
-fi
+split_script="$HOME/.local/bin/split-fones.sh"
+resync_script="$HOME/.local/bin/resync-fones.sh"
+fones_config="$HOME/.config/linux-bluetooth-split-stereo/config"
 
-if [ -f "$HOME/resync-fones.sh" ]; then
-    if grep -q 'playerctl play' "$HOME/resync-fones.sh"; then
-        ok "resync-fones tenta retomar música com playerctl play"
-    else
-        warn "resync-fones não menciona playerctl play"
-    fi
+if [ -x "$split_script" ] && [ -x "$resync_script" ]; then
+   ok "linux-bluetooth-split-stereo instalado"
+
+   if [ -f "$fones_config" ]; then
+       ok "Configuração externa encontrada"
+   else
+       warn "Configuração externa não encontrada: $fones_config"
+   fi
+
+   watchdog_active="$(unit_active fones-watchdog.service)"
+   watchdog_enabled="$(unit_enabled fones-watchdog.service)"
+
+   if [ "$watchdog_active" = "active" ]; then
+       ok "Watchdog dos fones ativo"
+   else
+       warn "Watchdog dos fones não está ativo: ${watchdog_active:-desconhecido}"
+   fi
+
+   if [ "$watchdog_enabled" = "enabled" ]; then
+       ok "Watchdog dos fones habilitado"
+   else
+       warn "Watchdog dos fones não está habilitado: ${watchdog_enabled:-desconhecido}"
+   fi
+elif [ -e "$split_script" ] || [ -e "$resync_script" ]; then
+   warn "Integração dos fones parcialmente instalada"
+else
+   printf "ℹ️  Integração linux-bluetooth-split-stereo não instalada\n"
 fi
 
 default_sink="indisponível"

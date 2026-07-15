@@ -137,7 +137,7 @@ detect_action() {
             ;;
 
         *"fone"*|*"fones"*|*"bluetooth"*|*"conectar fones"* )
-            echo "fone"
+            echo "removido"
             return
             ;;
 
@@ -385,12 +385,8 @@ execute_action() {
             do_logs
             ;;
 
-        fone)
-            run_existing "fone" "$HOME/split-fones.sh"
-            ;;
-
         resolver)
-            run_existing "resolver" "$HOME/resync-fones.sh"
+            run_existing "resolver" "$HOME/.local/bin/michael-resolver"
             ;;
 
         ouviu)

@@ -37,7 +37,7 @@ michael-router
 - Michael logs
 - Michael ouviu
 - Michael ajuda
-- Michael fone
+- Michael fone foi desativado; a conexão agora é automática pelo watchdog
 - Michael resolver
 - Michael desligar
 - Michael conte uma piada
@@ -55,9 +55,9 @@ michael-router
 
 ## Fones
 
-- Michael fone roda split-fones.sh
-- Michael resolver roda resync-fones.sh
-- Sink virtual usado: split_lr
+- O watchdog externo configura os fones automaticamente
+- Michael resolver solicita a ressincronização ao watchdog
+- A integração externa usa o sink virtual split_lr
 
 ## Welcome
 

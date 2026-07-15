@@ -27,4 +27,4 @@ O estado é informado por notificação e registrado em
 ## Comportamentos removidos
 
 O Michael 2.0 não executa automaticamente `michael-welcome` nem
-`auto-split-fones.sh`. O split dos fones é acionado manualmente.
+`auto-split-fones.sh`. O gerenciamento atual é automático pelo projeto `linux-bluetooth-split-stereo` e seu watchdog.

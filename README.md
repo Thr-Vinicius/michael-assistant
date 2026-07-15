@@ -49,3 +49,12 @@ A integração necessária com o Hyprland está descrita em
 - `legacy/michael-1.1/`: arquivos preservados do Michael 1.1.
 - `legacy/michael-1.2/`: fotografia preservada do Michael 1.2.
 - `future/`: ideias fora da versão atual, sem execução automática.
+
+## Integração com os fones Bluetooth
+
+O gerenciamento dos dois fones foi transferido para o projeto
+[linux-bluetooth-split-stereo](https://github.com/Thr-Vinicius/linux-bluetooth-split-stereo).
+
+O watchdog configura as saídas automaticamente. O comando `Michael fone` foi
+desativado, enquanto `Michael resolver` permanece disponível para solicitar uma
+ressincronização. Consulte [docs/integracao-fones.md](docs/integracao-fones.md).
