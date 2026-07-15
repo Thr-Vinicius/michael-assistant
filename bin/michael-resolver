@@ -49,6 +49,66 @@ if [[ -e "$ACTION_FLAG" ]]; then
     exit 0
 fi
 
+# A manual resync only makes sense when both configured
+# Bluetooth headphones are currently available.
+CONFIG_FILE="${BLUETOOTH_SPLIT_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/linux-bluetooth-split-stereo/config}"
+
+if [[ -r "$CONFIG_FILE" ]]; then
+    # shellcheck disable=SC1090
+    source "$CONFIG_FILE"
+fi
+
+if [[ -z "${LEFT_DEVICE:-}" ||
+      -z "${RIGHT_DEVICE:-}" ]]; then
+
+    notify_basic \
+        "Michael" \
+        "A configuração dos fones não foi encontrada."
+
+    log_michael \
+        "resolver ignorado: configuração dos fones ausente"
+
+    exit 0
+fi
+
+sinks="$(pactl list short sinks 2>/dev/null || true)"
+
+left_connected=0
+right_connected=0
+
+awk -v target="$LEFT_DEVICE" '
+    $2 == target {
+        found = 1
+    }
+
+    END {
+        exit(found ? 0 : 1)
+    }
+' <<< "$sinks" && left_connected=1
+
+awk -v target="$RIGHT_DEVICE" '
+    $2 == target {
+        found = 1
+    }
+
+    END {
+        exit(found ? 0 : 1)
+    }
+' <<< "$sinks" && right_connected=1
+
+if (( left_connected == 0 ||
+      right_connected == 0 )); then
+
+    notify_basic \
+        "Michael" \
+        "Conecte os dois fones antes de pedir a ressincronização."
+
+    log_michael \
+        "resolver ignorado: os dois fones não estão conectados"
+
+    exit 0
+fi
+
 : > "$REQUEST_FLAG"
 
 if ! systemctl --user is-active --quiet \
