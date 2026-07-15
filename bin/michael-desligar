@@ -114,7 +114,7 @@ else
     log_michael "desligar: atualizações retornaram erro; veja $UPDATE_LOG"
 fi
 
-set_system_volume "60%"
+set_system_volume "70%"
 sleep 0.2
 
 play_blocking "$SHUTDOWN_AUDIO" || true

@@ -34,6 +34,7 @@ Manter um assistente local pequeno, seguro, útil e sem LLM por enquanto.
 - bin/michael-ouviu: histórico do que foi reconhecido.
 - bin/michael-desligar: rotina controlada de desligamento.
 - bin/michael-session-ready: prepara a sessão gráfica para o serviço de voz.
+- bin/michael-welcome: reproduz o som curto de inicialização.
 - bin/michael-zero-toggle: liga ou desliga temporariamente a escuta.
 - bin/michael-ultimos: mostra um resumo curto dos logs.
 - hypr/scripts/: integração com Hyprland.

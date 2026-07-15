@@ -1,6 +1,15 @@
 # Integração com o Hyprland
 
-O Michael 2.0 usa duas integrações diretas no `hyprland.conf`.
+O Michael 2.0 usa três integrações diretas no `hyprland.conf`.
+
+## Som de inicialização
+
+Executar uma vez durante o login:
+
+    exec-once = /home/arthur/.local/bin/michael-welcome
+
+O script reproduz somente o áudio curto `inic.mp3` em 70%. A antiga mensagem
+longa de boas-vindas permanece desativada.
 
 ## Preparar a sessão gráfica
 
@@ -24,7 +33,7 @@ bind = SUPER CTRL, M, exec, /home/arthur/.local/bin/michael-zero-toggle
 O estado é informado por notificação e registrado em
 `~/.local/state/michael/zero.log`.
 
-## Comportamentos removidos
+## Gerenciamento dos fones
 
-O Michael 2.0 não executa automaticamente `michael-welcome` nem
-`auto-split-fones.sh`. O gerenciamento atual é automático pelo projeto `linux-bluetooth-split-stereo` e seu watchdog.
+O Hyprland não executa mais `auto-split-fones.sh`. O gerenciamento atual é
+automático pelo projeto `linux-bluetooth-split-stereo` e seu watchdog.
