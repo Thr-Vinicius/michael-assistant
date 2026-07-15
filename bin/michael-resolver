@@ -15,34 +15,66 @@ if command -v flock >/dev/null 2>&1; then
     fi
 fi
 
-SCRIPT=""
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
 
-for candidate in \
-    "$HOME/resync-fones.sh" \
-    "$HOME/.local/bin/resync-fones.sh" \
-    "$HOME/.config/hypr/scripts/resync-fones.sh" \
-    "$HOME/scripts/resync-fones.sh"
-do
-    if [[ -x "$candidate" ]]; then
-        SCRIPT="$candidate"
-        break
+REQUEST_FLAG="$RUNTIME_DIR/fones-watchdog-resync-request-${UID}.flag"
+ACTION_FLAG="$RUNTIME_DIR/fones-watchdog-action-${UID}.flag"
+
+if ! declare -F notify_basic >/dev/null; then
+    notify_basic() {
+        command -v notify-send >/dev/null 2>&1 &&
+            notify-send "$1" "$2"
+    }
+fi
+
+if ! declare -F log_michael >/dev/null; then
+    log_michael() {
+        local log_dir="$HOME/.local/share/michael/logs"
+
+        mkdir -p "$log_dir"
+
+        printf '[%(%F %T)T] %s\n' -1 "$*" \
+            >> "$log_dir/fones.log"
+    }
+fi
+
+if [[ -e "$ACTION_FLAG" ]]; then
+    notify_basic \
+        "Michael" \
+        "Os fones já estão sendo configurados."
+
+    log_michael \
+        "resolver ignorado: configuração já em andamento"
+
+    exit 0
+fi
+
+: > "$REQUEST_FLAG"
+
+if ! systemctl --user is-active --quiet \
+    fones-watchdog.service; then
+
+    if ! systemctl --user start \
+        fones-watchdog.service; then
+
+        rm -f "$REQUEST_FLAG"
+
+        notify_basic \
+            "Michael" \
+            "Não consegui iniciar o supervisor dos fones."
+
+        log_michael \
+            "resolver falhou: watchdog não iniciou"
+
+        exit 1
     fi
-done
-
-if [[ -z "$SCRIPT" ]]; then
-    notify_basic "Michael" "Não encontrei o script resync-fones.sh."
-    log_michael "resolver falhou: resync-fones.sh não encontrado"
-    exit 1
 fi
 
-notify_basic "Michael" "Ressincrozando a gambiarra..."
-log_michael "resolver iniciado: $SCRIPT"
+notify_basic \
+    "Michael" \
+    "Ressincronização dos fones solicitada."
 
-if "$SCRIPT" >> "$FONE_LOG" 2>&1; then
-    notify_basic "Michael" "Fones ressincrozados."
-    log_michael "resolver finalizado"
-else
-    notify_basic "Michael" "Não consegui ressincrozar os fones."
-    log_michael "resolver falhou; veja $FONE_LOG"
-    exit 1
-fi
+log_michael \
+    "resolver solicitou resync ao watchdog"
+
+exit 0

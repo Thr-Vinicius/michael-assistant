@@ -33,7 +33,6 @@ A LLM não executa comandos diretamente. Ela apenas sugere uma ação desta list
 
 | voltar | Reativar escuta do Michael |
 
-| fone | Conectar/sincronizar fones |
 
 | resolver | Ressincronizar fones |
 
