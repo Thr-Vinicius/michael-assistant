@@ -59,12 +59,13 @@ michael-router
 - Michael resolver solicita a ressincronização ao watchdog
 - A integração externa usa o sink virtual split_lr
 
-## Welcome
+## Som de inicialização
 
-O áudio e o script de boas-vindas na inicialização foram removidos da versão
-atual. O Hyprland não executa mais `michael-welcome` durante o login.
+O Hyprland executa `michael-welcome` uma vez durante o login. O script reproduz
+somente o áudio curto `inic.mp3`, com o volume configurado em 70%.
 
-O comportamento antigo permanece preservado em `legacy/michael-1.2/`.
+A antiga mensagem longa de boas-vindas continua desativada. A implementação
+completa anterior permanece preservada em `legacy/michael-1.2/`.
 
 ## Sessão e modo game
 
