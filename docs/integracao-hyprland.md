@@ -37,3 +37,27 @@ O estado é informado por notificação e registrado em
 
 O Hyprland não executa mais `auto-split-fones.sh`. O gerenciamento atual é
 automático pelo projeto `linux-bluetooth-split-stereo` e seu watchdog.
+
+## Atalho para ressincronizar os fones
+
+Quando o sistema de áudio dividido estiver instalado, o comando
+`michael-resolver` pode ser associado a um atalho do Hyprland.
+
+Exemplo com `Ctrl + Super + F`:
+
+```ini
+bind = CTRL SUPER, F, exec, ~/.local/bin/michael-resolver
+```
+
+Recarregue a configuração:
+
+```bash
+hyprctl reload
+```
+
+O atalho funciona sem reconhecimento de voz e também pode ser usado quando
+o modo jogo estiver ativo.
+
+O comando verifica se os dois fones estão conectados antes de solicitar a
+ressincronização. Quando eles não estão disponíveis, nenhum pedido fica
+pendente no watchdog.
