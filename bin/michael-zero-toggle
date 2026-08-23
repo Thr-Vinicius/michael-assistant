@@ -17,6 +17,24 @@ notify() {
     fi
 }
 
+stop_caelestia() {
+    pkill -f '^qs -c overview$' >/dev/null 2>&1 || true
+    pkill -f '^qs -c caelestia ' >/dev/null 2>&1 || true
+    log "Caelestia e overview encerrados"
+}
+
+start_caelestia() {
+    if ! pgrep -f '^qs -c caelestia ' >/dev/null 2>&1; then
+        caelestia shell -d >/dev/null 2>&1 &
+    fi
+
+    if ! pgrep -f '^qs -c overview$' >/dev/null 2>&1; then
+        qs -c overview >/dev/null 2>&1 &
+    fi
+
+    log "Caelestia e overview iniciados"
+}
+
 SERVICE="michael-voice.service"
 
 if systemctl --user is-active --quiet "$SERVICE"; then
@@ -28,14 +46,18 @@ if systemctl --user is-active --quiet "$SERVICE"; then
         exit 1
     fi
 
-    notify "Michael Zero" "Escuta desligada. Modo game ativado."
-    log "serviço parado: $SERVICE"
+    stop_caelestia
+
+    notify "Michael Zero" "Modo game ativado. Michael e Caelestia desligados."
+    log "modo game ativado; serviço parado: $SERVICE"
 else
     systemctl --user start "$SERVICE" >/dev/null 2>&1
 
     if systemctl --user is-active --quiet "$SERVICE"; then
-        notify "Michael Zero" "Escuta reativada."
-        log "serviço iniciado: $SERVICE"
+        start_caelestia
+
+        notify "Michael Zero" "Modo game desativado. Michael e Caelestia reativados."
+        log "modo game desativado; serviço iniciado: $SERVICE"
         exit 0
     fi
 
