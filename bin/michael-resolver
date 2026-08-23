@@ -18,7 +18,6 @@ fi
 RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
 
 REQUEST_FLAG="$RUNTIME_DIR/fones-watchdog-resync-request-${UID}.flag"
-ACTION_FLAG="$RUNTIME_DIR/fones-watchdog-action-${UID}.flag"
 
 if ! declare -F notify_basic >/dev/null; then
     notify_basic() {
@@ -36,17 +35,6 @@ if ! declare -F log_michael >/dev/null; then
         printf '[%(%F %T)T] %s\n' -1 "$*" \
             >> "$log_dir/fones.log"
     }
-fi
-
-if [[ -e "$ACTION_FLAG" ]]; then
-    notify_basic \
-        "Michael" \
-        "Os fones já estão sendo configurados."
-
-    log_michael \
-        "resolver ignorado: configuração já em andamento"
-
-    exit 0
 fi
 
 # A manual resync only makes sense when both configured
