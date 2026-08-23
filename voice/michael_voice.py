@@ -14,8 +14,8 @@ import sounddevice as sd
 import vosk
 
 MODEL_PATH = os.path.expanduser("~/vosk-model")
-MICHAEL_CMD = "/home/arthur/.local/bin/michael-voice-command"
-LOG_FILE = "/home/arthur/.local/share/michael/logs/michael.log"
+MICHAEL_CMD = os.path.expanduser("~/.local/bin/michael-voice-command")
+LOG_FILE = os.path.expanduser("~/.local/share/michael/logs/michael.log")
 VOICE_LOCK_FILE = f"/run/user/{os.getuid()}/michael/voice.lock"
 ACTIVATE_FILE = f"/run/user/{os.getuid()}/michael/activate_listen"
 VOICE_LOCK_HANDLE = None
