@@ -1,63 +1,57 @@
 # Integração com o Hyprland
 
-O Michael 2.0 usa três integrações diretas no `hyprland.conf`.
+O Michael 2.0 usa integrações diretas com o Hyprland por meio do provider Lua.
 
 ## Som de inicialização
 
 Executar uma vez durante o login:
 
-    exec-once = /home/arthur/.local/bin/michael-welcome
+    hl.exec_cmd("/home/arthur/.local/bin/michael-welcome")
 
-O script reproduz somente o áudio curto `inic.mp3` em 70%. A antiga mensagem
+O script reproduz somente o áudio curto de inicialização. A antiga mensagem
 longa de boas-vindas permanece desativada.
 
 ## Preparar a sessão gráfica
 
 Executar uma vez durante o login:
 
-```ini
-exec-once = /home/arthur/.local/bin/michael-session-ready
-```
+    hl.exec_cmd("/home/arthur/.local/bin/michael-session-ready")
 
 O script espera a sessão gráfica estabilizar, importa as variáveis do Wayland e
 reinicia `michael-voice.service`.
 
 ## Modo game
 
-Atalho para desligar ou reativar temporariamente a escuta:
+O atalho atual chama:
 
-```ini
-bind = SUPER CTRL, M, exec, /home/arthur/.local/bin/michael-zero-toggle
-```
+    /home/arthur/.local/bin/michael-zero-toggle
 
-O estado é informado por notificação e registrado em
-`~/.local/state/michael/zero.log`.
+Quando o modo game é ativado:
+
+- `michael-voice.service` é interrompido;
+- o Caelestia Shell é encerrado;
+- o Overview do Quickshell é encerrado.
+
+Quando o modo game é desativado, os três componentes são reativados.
+
+O estado é informado por notificação e registrado nos logs do Michael.
 
 ## Gerenciamento dos fones
 
-O Hyprland não executa mais `auto-split-fones.sh`. O gerenciamento atual é
-automático pelo projeto `linux-bluetooth-split-stereo` e seu watchdog.
+O gerenciamento dos dois fones Bluetooth pertence ao projeto
+`linux-bluetooth-split-stereo` e funciona independentemente do Michael.
+
+O Hyprland não executa mais scripts antigos de roteamento dos fones.
 
 ## Atalho para ressincronizar os fones
 
-Quando o sistema de áudio dividido estiver instalado, o comando
-`michael-resolver` pode ser associado a um atalho do Hyprland.
+A ressincronização manual chama diretamente:
 
-Exemplo com `Ctrl + Super + F`:
+    ~/.local/bin/resync-fones.sh
 
-```ini
-bind = CTRL SUPER, F, exec, ~/.local/bin/michael-resolver
-```
+O atalho atual no Hyprland é:
 
-Recarregue a configuração:
+    SUPER + SHIFT + R
 
-```bash
-hyprctl reload
-```
-
-O atalho funciona sem reconhecimento de voz e também pode ser usado quando
-o modo jogo estiver ativo.
-
-O comando verifica se os dois fones estão conectados antes de solicitar a
-ressincronização. Quando eles não estão disponíveis, nenhum pedido fica
-pendente no watchdog.
+Assim, a ressincronização dos fones não depende do Michael e continua
+disponível mesmo quando o modo game está ativo.
