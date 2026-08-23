@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-LEFT_MAC="41:42:FF:D2:DA:FB"
-RIGHT_MAC="41:42:FF:89:D2:08"
+LEFT_MAC="AA:BB:CC:DD:EE:01"
+RIGHT_MAC="AA:BB:CC:DD:EE:02"
 
 echo "Disconnecting headphones..."
 bluetoothctl disconnect "$LEFT_MAC" || true
