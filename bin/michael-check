@@ -236,10 +236,12 @@ echo "Sink padrão atual: $default_sink"
 
 section "Vosk"
 
-if find "$HOME" -maxdepth 3 -type d -iname '*vosk*' 2>/dev/null | head -n 1 | grep -q .; then
-    ok "Modelo/pasta Vosk encontrada"
+vosk_model="$HOME/.local/share/michael/models/vosk"
+
+if [ -d "$vosk_model" ]; then
+    ok "Modelo Vosk encontrado: $vosk_model"
 else
-    warn "Modelo/pasta Vosk não encontrado em busca rasa"
+    warn "Modelo Vosk não encontrado: $vosk_model"
 fi
 
 section "Resumo"

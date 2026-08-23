@@ -4,7 +4,7 @@ set -euo pipefail
 source "$HOME/.local/share/michael/scripts/config.sh"
 
 LOCK_FILE="$MICHAEL_RUNTIME_DIR/desligar.lock"
-SHUTDOWN_AUDIO="$HOME/audios-michael/deslig.mp3"
+SHUTDOWN_AUDIO="$HOME/.local/share/michael/audio/deslig.mp3"
 UPDATE_LOG="$LOG_DIR/desligar-update.log"
 
 if command -v flock >/dev/null 2>&1; then

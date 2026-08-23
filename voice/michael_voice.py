@@ -13,7 +13,7 @@ import unicodedata
 import sounddevice as sd
 import vosk
 
-MODEL_PATH = os.path.expanduser("~/vosk-model")
+MODEL_PATH = os.path.expanduser("~/.local/share/michael/models/vosk")
 MICHAEL_CMD = os.path.expanduser("~/.local/bin/michael-voice-command")
 LOG_FILE = os.path.expanduser("~/.local/share/michael/logs/michael.log")
 VOICE_LOCK_FILE = f"/run/user/{os.getuid()}/michael/voice.lock"
@@ -94,7 +94,7 @@ COMMAND_KEYWORDS = {
 
 ACTIVATION_AUDIO = os.environ.get(
     "MICHAEL_ACTIVATION_AUDIO",
-    os.path.expanduser("~/audios-michael/conf_1_som.mp3"),
+    os.path.expanduser("~/.local/share/michael/audio/conf_1_som.mp3"),
 )
 
 CRITICAL_COMMANDS = {

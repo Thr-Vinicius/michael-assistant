@@ -3,7 +3,7 @@ set -euo pipefail
 
 source "$HOME/.local/share/michael/scripts/config.sh"
 
-INTRO_AUDIO="${MICHAEL_START_AUDIO:-$HOME/audios-michael/inic.mp3}"
+INTRO_AUDIO="${MICHAEL_START_AUDIO:-$HOME/.local/share/michael/audio/inic.mp3}"
 LOCK_FILE="$MICHAEL_RUNTIME_DIR/welcome.lock"
 
 play_blocking() {

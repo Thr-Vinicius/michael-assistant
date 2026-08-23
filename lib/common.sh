@@ -20,7 +20,7 @@ WELCOME_LAST_FILE="$MICHAEL_RUNTIME_DIR/welcome_last"
 LEGACY_PAUSED="$HOME/.jarvis_paused"
 LEGACY_WELCOME="$HOME/.michael_welcome_played"
 
-WELCOME_AUDIO="${MICHAEL_WELCOME_AUDIO:-$HOME/audios-michael/boas_vindas_senhor_pronto_para_mais_um_dia.mp3}"
+WELCOME_AUDIO="${MICHAEL_WELCOME_AUDIO:-$AUDIO_DIR/boas_vindas_senhor_pronto_para_mais_um_dia.mp3}"
 WELCOME_COOLDOWN_SECONDS="${MICHAEL_WELCOME_COOLDOWN_SECONDS:-3600}"
 
 log_michael() {
