@@ -126,11 +126,6 @@ check_executable "$HOME/.local/bin/michael-ouviu"
 check_executable "$HOME/.local/bin/michael-check"
 check_executable "$HOME/.local/bin/michael-resolver"
 
-check_executable "$HOME/.local/bin/michael-setup-request"
-check_executable "$HOME/.local/bin/abrir-setup"
-check_executable "$HOME/.config/hypr/scripts/abrir-wa-yt.sh"
-
-
 section "Arquivos principais"
 
 check_file "$HOME/michael_voice.py"

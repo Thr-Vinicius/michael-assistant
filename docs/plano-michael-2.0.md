@@ -73,8 +73,6 @@ A LLM não será chamada para comandos óbvios.
   
 Exemplos que não precisam de LLM:  
   
-- Michael começar  
-- Michael setup  
 - Michael status  
 - Michael estado  
 - Michael check  
@@ -90,7 +88,6 @@ A LLM poderá interpretar frases naturais quando o parser local não entender co
   
 Exemplos:  
   
-- bora trabalhar  
 - organiza minha bagunça  
 - meus fones estão bugados  
 - como você está?  

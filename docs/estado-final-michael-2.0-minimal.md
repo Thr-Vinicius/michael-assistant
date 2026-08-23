@@ -30,8 +30,6 @@ michael-router
 
 ## Comandos ativos
 
-- Michael começar / Michael setup
-- Michael mudar
 - Michael status / Michael estado
 - Michael check
 - Michael logs

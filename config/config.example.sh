@@ -48,20 +48,6 @@ notify_cooldown() {
     fi
 }
 
-apps_open() {
-    if ! command -v hyprctl >/dev/null 2>&1 || ! command -v jq >/dev/null 2>&1; then
-        return 1
-    fi
-
-    hyprctl clients -j | jq -e '
-        .[] | select(
-            ((.class // "") | test("zen|zen-browser|chrome-cinhimbnkkaeohfgghhklpknlkffjgod-Default|chrome-hnpfjngllnobngcgfapefoaidbinmjnm-Default"; "i"))
-            or
-            ((.title // "") | test("Zen|WhatsApp"; "i"))
-        )
-    ' >/dev/null 2>&1
-}
-
 set_system_volume() {
     local volume="$1"
 

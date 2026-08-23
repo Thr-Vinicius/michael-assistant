@@ -19,10 +19,6 @@ A LLM não executa comandos diretamente. Ela apenas sugere uma ação desta list
 
 |---|---|
 
-| setup | Abrir o ambiente de trabalho |
-
-| mudar | Reorganizar janelas/setup |
-
 | status | Mostrar estado do Michael |
 
 | check | Rodar diagnóstico rápido |

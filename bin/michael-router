@@ -116,7 +116,7 @@ detect_action() {
     esac
 
     case "$t" in
-        *"pausa"*|*"pausar"*|*"voltar"*|*"ativar"*|*"musica"*|*"youtube music"*|*"music"*|*"tempo"*|*"clima"*|*"previsao"*|*"agenda"*|*"calendario"*|*"noticia"*|*"noticias"*|*"tarefa"*|*"tarefas"*|*"standard notes"*|*"obsidian"*|*"video"*|*"videos"*|*"volume"*)
+        *"pausa"*|*"pausar"*|*"voltar"*|*"ativar"*|*"musica"*|*"music"*|*"tempo"*|*"clima"*|*"previsao"*|*"agenda"*|*"calendario"*|*"noticia"*|*"noticias"*|*"tarefa"*|*"tarefas"*|*"standard notes"*|*"obsidian"*|*"video"*|*"videos"*|*"volume"*)
             echo "removido"
             return
             ;;
@@ -138,16 +138,6 @@ detect_action() {
 
         *"fone"*|*"fones"*|*"bluetooth"*|*"conectar fones"* )
             echo "removido"
-            return
-            ;;
-
-        *"comecar"*|*"comeca"*|*"comece"*|*"setup"*|*"bora trabalhar"*|*"vamos trabalhar"*|*"abrir setup"*|*"iniciar trabalho"* )
-            echo "setup"
-            return
-            ;;
-
-        *"mudar"*|*"muda"*|*"organiza minha bagunca"*|*"organizar minha bagunca"*|*"organiza a bagunca"*|*"arrumar janelas"*|*"reorganizar"* )
-            echo "mudar"
             return
             ;;
 
@@ -361,18 +351,6 @@ respond_only() {
 
 execute_action() {
     case "$ACTION" in
-        setup)
-            if [ -x "$HOME/.local/bin/michael-setup-request" ] || [ -e "$HOME/.local/bin/michael-setup-request" ]; then
-                run_existing "setup" "$HOME/.local/bin/michael-setup-request"
-            else
-                run_existing "setup" "$HOME/.local/bin/abrir-setup"
-            fi
-            ;;
-
-        mudar)
-            run_existing "mudar" "$HOME/.config/hypr/scripts/abrir-wa-yt.sh"
-            ;;
-
         status)
             run_existing "status" "$HOME/.local/bin/michael-status"
             ;;

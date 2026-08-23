@@ -48,16 +48,7 @@ WAKE_WORDS = {
 }
 
 COMMAND_KEYWORDS = {
-    "comecar",
-    "comeca",
-    "comece",
-    "iniciar",
-    "inicia",
-    "inicie",
-    "setup",
-    "abrir setup",
     "musica",
-    "youtube",
     "music",
     "pausa",
     "pausar",
@@ -76,13 +67,11 @@ COMMAND_KEYWORDS = {
     "logs",
     "ultimos",
     "volume",
-    "mudar",
     "video",
     "videos",
     "muda",
     "trocar",
     "troca",
-    "reorganizar",
     "organizar",
     "organiza",
     "tempo",
@@ -367,7 +356,7 @@ def handle_text(raw_text: str) -> None:
     critical = is_critical_command(text)
     active = now <= active_until
 
-    # Exemplo: "Michael começar" ou "Michael mudar"
+    # Exemplo: "Michael status" ou "Michael resolver"
     if wake and command:
         log(f"reconhecido direto: {text}")
         route_text(text)
@@ -385,7 +374,6 @@ def handle_text(raw_text: str) -> None:
         lower_volume_for_listening()
         return
 
-    # Exemplo após ativação: "começar"
     if active and command:
         log(f"reconhecido após ativação: {text}")
         active_until = 0.0

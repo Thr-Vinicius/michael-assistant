@@ -36,19 +36,6 @@ if [ -x "$HOME/.local/bin/michael" ]; then
     terminal_status="ok"
 fi
 
-setup_aberto="não"
-if command -v hyprctl >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
-    if hyprctl clients -j 2>/dev/null | jq -e '
-        .[] | select(
-            (.class | test("zen|zen-browser|chrome-cinhimbnkkaeohfgghhklpknlkffjgod-Default|chrome-hnpfjngllnobngcgfapefoaidbinmjnm-Default"; "i"))
-            or
-            (.title | test("Zen|YouTube Music|WhatsApp"; "i"))
-        )
-    ' >/dev/null 2>&1; then
-        setup_aberto="sim"
-    fi
-fi
-
 ydotool_status="não instalado"
 if command -v ydotool >/dev/null 2>&1; then
     ydotool_status="instalado"
@@ -78,7 +65,6 @@ Modo terminal:         ${terminal_status}
 Voz antiga/Jarvis:     ${jarvis_active} / ${jarvis_enabled}
 Palmas:                ${clap_active} / ${clap_enabled}
 
-Setup aberto:          ${setup_aberto}
 ydotool:               ${ydotool_status}
 playerctl:             ${playerctl_status}
 
