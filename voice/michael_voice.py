@@ -89,6 +89,7 @@ COMMAND_KEYWORDS = {
     "resincronizar",
     "resincroniza",
     "desligar",
+    "desliga",
     "encerrar",
 }
 
@@ -96,13 +97,6 @@ ACTIVATION_AUDIO = os.environ.get(
     "MICHAEL_ACTIVATION_AUDIO",
     os.path.expanduser("~/.local/share/michael/audio/conf_1_som.mp3"),
 )
-
-CRITICAL_COMMANDS = {
-    "desligar",
-    "encerrar",
-    "poweroff",
-    "shutdown",
-}
 
 QUESTION_PREFIXES = (
     "como ",
@@ -252,10 +246,6 @@ def has_command(text: str) -> bool:
     return any(cmd in text for cmd in COMMAND_KEYWORDS)
 
 
-def is_critical_command(text: str) -> bool:
-    return any(cmd in text for cmd in CRITICAL_COMMANDS)
-
-
 def strip_leading_wake(text: str) -> str:
     parts = text.split(maxsplit=1)
     if parts and parts[0] in WAKE_WORDS:
@@ -353,7 +343,6 @@ def handle_text(raw_text: str) -> None:
     now = time.time()
     wake = contains_wake(text)
     command = has_command(text)
-    critical = is_critical_command(text)
     active = now <= active_until
 
     # Exemplo: "Michael status" ou "Michael resolver"
